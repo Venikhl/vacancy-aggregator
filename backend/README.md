@@ -7,5 +7,5 @@
 - `uv`
 
 ```bash
-uv run app.main:app
+uv run uvicorn app.main:app
 ```
