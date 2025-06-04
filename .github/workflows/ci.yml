@@ -34,13 +34,13 @@ jobs:
 
       - name: Run Flake8
         working-directory: ./backend
-        run: flake8 . --count --show-source --statistics
+        run: uv run flake8 . --count --show-source --statistics
 
       - name: Run Bandit
         working-directory: ./backend
-        run: bandit -r . -x tests
+        run: uv run bandit -r . -x tests
 
       - name: Run pydocstyle
         working-directory: ./backend
         run: |
-          pydocstyle .
+          uv run pydocstyle .
