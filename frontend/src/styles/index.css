@@ -5,6 +5,7 @@
 
 :root {
     --background: var(--color-black);
+
     --primary: var(--color-orange-600);
     --primary-hover: var(--color-orange-700);
     --primary-active: var(--color-orange-500);
@@ -17,6 +18,8 @@
 }
 
 @theme inline {
+    --color-background: var(--background);
+
     --color-primary: var(--primary);
     --color-primary-hover: var(--primary-hover);
     --color-primary-active: var(--primary-active);
@@ -33,7 +36,6 @@
     --radius-md: calc(var(--radius) - 2px);
     --radius-lg: var(--radius);
     --radius-xl: calc(var(--radius) + 4px);
-    --color-background: var(--background);
     --color-card: var(--card);
     --color-card-foreground: var(--card-foreground);
     --color-popover: var(--popover);
@@ -65,7 +67,6 @@
 
 :root {
     --radius: 0.625rem;
-    --background: oklch(1 0 0);
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
@@ -137,5 +138,5 @@
 }
 
 body {
-    font-family: 'Inter', sans-serif;
+    font-family: system-ui;
 }
