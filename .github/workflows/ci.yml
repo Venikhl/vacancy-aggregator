@@ -2,9 +2,9 @@ name: Backend CI
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - 'backend/**'
+      - "backend/**"
 
 jobs:
   test:
