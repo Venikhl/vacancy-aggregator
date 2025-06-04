@@ -30,7 +30,7 @@ const Sidebar: React.FC = () => {
                     <FaFileAlt /> Резюме
                 </NavLink>
                 <NavLink
-                    to="/vacancy"
+                    to="/vacancies"
                     className={({ isActive }) =>
                         isActive
                             ? 'sidebar__link sidebar__link--active'
