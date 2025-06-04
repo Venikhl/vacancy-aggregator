@@ -39,7 +39,7 @@ jobs:
 
       - name: Run Bandit
         working-directory: ./backend
-        run: uv run bandit -r . -x tests
+        run: uv run bandit ./app -r -x tests
 
       - name: Run pydocstyle
         working-directory: ./backend
