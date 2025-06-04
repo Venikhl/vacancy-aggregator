@@ -1,10 +1,32 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { FaFileAlt, FaCog, FaSearch, FaHeart } from 'react-icons/fa';
-import '../../styles/sidebar.css';
+import { Button } from '@/components/ui/button';
+import '@/styles/sidebar.css';
 
 const Sidebar: React.FC = () => {
-    const navigate = useNavigate();
+    const navLinks = [
+        {
+            href: '/resume',
+            title: 'Резюме',
+            icon: FaFileAlt,
+        },
+        {
+            href: '/vacancies',
+            title: 'Поиск работы',
+            icon: FaSearch,
+        },
+        {
+            href: '/favorites',
+            title: 'Избранное',
+            icon: FaHeart,
+        },
+        {
+            href: '/settings',
+            title: 'Настройки',
+            icon: FaCog,
+        },
+    ];
 
     return (
         <aside className="sidebar">
@@ -19,55 +41,24 @@ const Sidebar: React.FC = () => {
             </div>
 
             <nav className="sidebar__nav">
-                <NavLink
-                    to="/resume"
-                    className={({ isActive }) =>
-                        isActive
-                            ? 'sidebar__link sidebar__link--active'
-                            : 'sidebar__link'
-                    }
-                >
-                    <FaFileAlt /> Резюме
-                </NavLink>
-                <NavLink
-                    to="/vacancies"
-                    className={({ isActive }) =>
-                        isActive
-                            ? 'sidebar__link sidebar__link--active'
-                            : 'sidebar__link'
-                    }
-                >
-                    <FaSearch /> Поиск работы
-                </NavLink>
-                <NavLink
-                    to="/favorites"
-                    className={({ isActive }) =>
-                        isActive
-                            ? 'sidebar__link sidebar__link--active'
-                            : 'sidebar__link'
-                    }
-                >
-                    <FaHeart /> Избранное
-                </NavLink>
-                <NavLink
-                    to="/settings"
-                    className={({ isActive }) =>
-                        isActive
-                            ? 'sidebar__link sidebar__link--active'
-                            : 'sidebar__link'
-                    }
-                >
-                    <FaCog /> Настройки
-                </NavLink>
+                {navLinks.map(({ href, title, icon: Icon }, index) => (
+                    <NavLink
+                        key={index}
+                        to={href}
+                        className={({ isActive }) =>
+                            isActive
+                                ? 'sidebar__link sidebar__link--active'
+                                : 'sidebar__link'
+                        }
+                    >
+                        <Icon /> {title}
+                    </NavLink>
+                ))}
             </nav>
 
-            <button
-                type="button"
-                className="sidebar__home-button"
-                onClick={() => navigate('/')}
-            >
-                ← На главную
-            </button>
+            <Button variant="ghost" className="sidebar__home-button" asChild>
+                <Link to="/">← На главную</Link>
+            </Button>
         </aside>
     );
 };

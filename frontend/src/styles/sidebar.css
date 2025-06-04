@@ -82,6 +82,7 @@
     border: none;
     color: #f36c3d;
     cursor: pointer;
+    margin-right: auto;
     font-size: 0.9rem;
     padding: 0.5rem 1rem;
     text-align: left;
