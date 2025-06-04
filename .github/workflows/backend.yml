@@ -35,7 +35,7 @@ jobs:
 
       - name: Run Flake8
         working-directory: ./backend
-        run: uv run flake8 ./app . --count --show-source --statistics
+        run: uv run flake8 ./app --count --show-source --statistics
 
       - name: Run Bandit
         working-directory: ./backend
