@@ -1,0 +1,832 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "vacancy-aggregator API",
+    "description": "Backend interface for vacancy-aggregator",
+    "version": "1"
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "paths": {
+    "/register": {
+      "post": {
+        "summary": "Register a user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Register"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tokens"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/login": {
+      "post": {
+        "summary": "Login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Login"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tokens"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/refresh_token": {
+      "post": {
+        "summary": "Refresh expired access token",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshToken"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token Refreshed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessToken"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/update_me": {
+      "post": {
+        "summary": "Update user information",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMe"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Information updated successfully"
+          }
+        }
+      }
+    },
+    "/get_me": {
+      "get": {
+        "summary": "Get user information",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/liked_vacancies": {
+      "post": {
+        "summary": "Get liked vacancies list",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/View"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Liked vacancies list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VacancyList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/like_vacancy/{id}": {
+      "get": {
+        "summary": "Like vacancy with specified ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully added to liked"
+          }
+        }
+      }
+    },
+    "/unlike_vacancy/{id}": {
+      "get": {
+        "summary": "Unlike vacancy with specified ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully removed from liked"
+          }
+        }
+      }
+    },
+    "/liked_resumes": {
+      "post": {
+        "summary": "Get liked resumes list",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/View"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Liked resumes list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumeList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/like_resume/{id}": {
+      "get": {
+        "summary": "Like resume with specified ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully added to liked"
+          }
+        }
+      }
+    },
+    "/unlike_resume/{id}": {
+      "get": {
+        "summary": "Unlike resume with specified ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully removed from liked"
+          }
+        }
+      }
+    },
+    "/vacancies": {
+      "post": {
+        "summary": "List available vacancies",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VacanciesView"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Vacancy list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VacancyList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/vacancy/{id}": {
+      "get": {
+        "summary": "Get a vacancy by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vacancy details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Vacancy"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/resumes": {
+      "post": {
+        "summary": "List available resumes",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResumesView"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resume list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResumeList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/resume/{id}": {
+      "get": {
+        "summary": "Get a resume by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resume details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Resume"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Register": {
+        "type": "object",
+        "required": ["first_name", "last_name", "email", "password"],
+        "properties": {
+          "first_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "Login": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        }
+      },
+      "Tokens": {
+        "type": "object",
+        "required": ["access_token", "refresh_token"],
+        "properties": {
+          "access_token": {
+            "type": "string"
+          },
+          "refresh_token": {
+            "type": "string"
+          }
+        }
+      },
+      "RefreshToken": {
+        "type": "object",
+        "required": ["refresh_token"],
+        "properties": {
+          "refresh_token": {
+            "type": "string"
+          }
+        }
+      },
+      "AccessToken": {
+        "type": "object",
+        "required": ["access_token"],
+        "properties": {
+          "access_token": {
+            "type": "string"
+          }
+        }
+      },
+      "UpdateMe": {
+        "type": "object",
+        "properties": {
+          "first_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "current_password": {
+            "type": "string"
+          },
+          "new_password": {
+            "type": "string"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "required": ["first_name", "last_name", "email"],
+        "properties": {
+          "first_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "View": {
+        "type": "object",
+        "required": ["offset", "count"],
+        "properties": {
+          "offset": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 200
+          }
+        }
+      },
+      "VacancyList": {
+        "type": "object",
+        "required": ["count", "vacancies"],
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "vacancies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VacancyShort"
+            }
+          }
+        }
+      },
+      "ResumeList": {
+        "type": "object",
+        "required": ["count", "resumes"],
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "resumes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResumeShort"
+            }
+          }
+        }
+      },
+      "VacancyFilter": {
+        "type": "object"
+      },
+      "ResumeFilter": {
+        "type": "object"
+      },
+      "VacanciesView": {
+        "type": "object",
+        "required": ["view"],
+        "properties": {
+          "filter": {
+            "$ref": "#/components/schemas/VacancyFilter"
+          },
+          "view": {
+            "$ref": "#/components/schemas/View"
+          }
+        }
+      },
+      "ResumesView": {
+        "type": "object",
+        "required": ["view"],
+        "properties": {
+          "filter": {
+            "$ref": "#/components/schemas/ResumeFilter"
+          },
+          "view": {
+            "$ref": "#/components/schemas/View"
+          }
+        }
+      },
+      "Salary": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "value": {
+            "type": "integer",
+            "description": "Fixed point integer with two decimal places, (123 should be interpreted as 1.23, 12 as 0.12, 1 as 0.01 etc.",
+            "minimum": 0
+          }
+        }
+      },
+      "Source": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "ExperienceCategory": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "Location": {
+        "type": "object",
+        "required": ["region"],
+        "properties": {
+          "region": {
+            "type": "string"
+          }
+        }
+      },
+      "Specialization": {
+        "type": "object",
+        "required": ["specialization"],
+        "properties": {
+          "specialization": {
+            "type": "string"
+          }
+        }
+      },
+      "EmploymentType": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "TimeStamp": {
+        "type": "object",
+        "required": ["time_stamp"],
+        "properties": {
+          "time_stamp": {
+            "type": "string"
+          }
+        }
+      },
+      "Company": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "VacancyShort": {
+        "type": "object",
+        "required": ["id", "title", "salary"],
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "salary": {
+            "$ref": "#/components/schemas/Salary"
+          }
+        }
+      },
+      "Vacancy": {
+        "type": "object",
+        "required": [
+          "id",
+          "external_id",
+          "title",
+          "salary",
+          "employment_types"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "external_id": {
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/Source"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "company": {
+            "$ref": "#/components/schemas/Company"
+          },
+          "salary": {
+            "$ref": "#/components/schemas/Salary"
+          },
+          "experience_category": {
+            "$ref": "#/components/schemas/ExperienceCategory"
+          },
+          "location": {
+            "$ref": "#/components/schemas/Location"
+          },
+          "specialization": {
+            "$ref": "#/components/schemas/Specialization"
+          },
+          "employment_types": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EmploymentType"
+            }
+          },
+          "published_at": {
+            "$ref": "#/components/schemas/TimeStamp"
+          },
+          "contacts": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "ResumeShort": {
+        "type": "object",
+        "required": ["id", "title", "salary"],
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          },
+          "salary": {
+            "$ref": "#/components/schemas/Salary"
+          },
+          "description": {
+            "type": "string"
+          },
+          "first_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "middle_name": {
+            "type": "string"
+          }
+        }
+      },
+      "Resume": {
+        "type": "object",
+        "required": ["id", "external_id", "title", "salary"],
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "external_id": {
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/Source"
+          },
+          "title": {
+            "type": "string"
+          },
+          "salary": {
+            "$ref": "#/components/schemas/Salary"
+          },
+          "description": {
+            "type": "string"
+          },
+          "location": {
+            "$ref": "#/components/schemas/Location"
+          },
+          "experience_category": {
+            "$ref": "#/components/schemas/ExperienceCategory"
+          },
+          "education": {
+            "type": "string"
+          },
+          "specialization": {
+            "$ref": "#/components/schemas/Specialization"
+          },
+          "first_name": {
+            "type": "string"
+          },
+          "last_name": {
+            "type": "string"
+          },
+          "middle_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone_number": {
+            "type": "string"
+          },
+          "published_at": {
+            "$ref": "#/components/schemas/TimeStamp"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
