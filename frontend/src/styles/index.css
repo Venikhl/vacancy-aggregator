@@ -13,8 +13,10 @@
     --on-primary-active: var(--color-black);
 
     --secondary: var(--color-gray-400);
+    --side: rgba(234, 234, 234, 1);
 
     --foreground: #1e1e1e;
+    --surface: rgba(42, 42, 42, 1);
 }
 
 @theme inline {
@@ -27,8 +29,10 @@
     --color-on-primary-active: var(--on-primary-active);
 
     --color-secondary: var(--secondary);
+    --color-side: var(--side);
 
     --color-foreground: var(--foreground);
+    --color-surface: var(--surface);
 }
 
 @theme inline {
