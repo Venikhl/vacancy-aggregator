@@ -1,11 +1,13 @@
 import { createBrowserRouter } from 'react-router-dom';
-import MainLayout from '@/components/layout/MainLayout/MainLayout.tsx';
-import SidebarLayout from '@/components/layout/SidebarLayout';
+import { MainLayout } from '@/components/layout/MainLayout';
+import { SidebarLayout } from '@/components/layout/SidebarLayout';
 
-import Resume from '@/components/pages/Resume/Resume';
-import About from '@/components/pages/About/About';
+import { Resume } from '@/components/pages/Resume';
+import { About } from '@/components/pages/About';
 import { Root } from '@/components/pages/Root';
 import { Vacancies } from '@/components/pages/Vacancies';
+import { Settings } from '@/components/pages/Settings';
+import { Favorites } from '@/components/pages/Favorites';
 
 export const router = createBrowserRouter([
     {
@@ -34,7 +36,18 @@ export const router = createBrowserRouter([
                 path: 'vacancies',
                 element: <Vacancies />,
             },
-            // добавляй сюда другие страницы
+            {
+                path: 'resume',
+                element: <Resume />,
+            },
+            {
+                path: 'settings',
+                element: <Settings />,
+            },
+            {
+                path: 'favorites',
+                element: <Favorites />,
+            },
         ],
     },
 ]);
