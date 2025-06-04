@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Link } from 'react-router-dom';
+import { LockKeyhole, User } from 'lucide-react';
 
 const Login = () => {
     const form = useForm<z.infer<typeof loginFormSchema>>({
@@ -45,6 +46,7 @@ const Login = () => {
                             <FormItem>
                                 <FormControl>
                                     <Input
+                                        startIcon={User}
                                         placeholder="Почта/Никнейм"
                                         {...field}
                                     />
@@ -59,7 +61,11 @@ const Login = () => {
                         render={({ field }) => (
                             <FormItem>
                                 <FormControl>
-                                    <Input placeholder="Пароль" {...field} />
+                                    <Input
+                                        startIcon={LockKeyhole}
+                                        placeholder="Пароль"
+                                        {...field}
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
