@@ -12,14 +12,14 @@ const TopPanel = () => {
                 {['Главная', 'Вакансии', 'О нас'].map((item) => (
                     <button
                         key={item}
-                        className="border border-orange-500 text-orange-500 rounded-full px-4 py-1 hover:bg-orange-500 hover:text-black transition"
+                        className="border border-primary-active text-primary-active rounded-full px-4 py-1 hover:bg-primary-active hover:text-on-primary-active transition"
                     >
                         {item}
                     </button>
                 ))}
             </div>
 
-            <Button className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-6 py-1">
+            <Button className="bg-primary hover:bg-primary-hover text-on-primary rounded-full px-6 py-1">
                 Войти
             </Button>
         </div>

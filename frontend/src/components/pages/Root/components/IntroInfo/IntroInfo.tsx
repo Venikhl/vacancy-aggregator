@@ -11,26 +11,26 @@ const IntroInfo = () => {
                     Donec gravida, urna vitae tincidunt gravida, dui lectus
                     finibus erat, nec vehicula urna sem quis dui.
                 </p>
-                <Button className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-6 py-2">
+                <Button className="bg-primary hover:bg-primary-hover text-white rounded-full px-6 py-2">
                     Регистрация
                 </Button>
 
-                <div className="mt-10 grid grid-cols-2 gap-6 text-orange-500">
+                <div className="mt-10 grid grid-cols-2 gap-6 text-primary-active">
                     <div>
                         <p className="text-2xl font-bold">15 482</p>
-                        <p className="text-sm text-white">Вакансий</p>
+                        <p className="text-sm text-on-primary">Вакансий</p>
                     </div>
                     <div>
                         <p className="text-2xl font-bold">8 729</p>
-                        <p className="text-sm text-white">Резюме</p>
+                        <p className="text-sm text-on-primary">Резюме</p>
                     </div>
                     <div>
                         <p className="text-2xl font-bold">3 254</p>
-                        <p className="text-sm text-white">Компаний</p>
+                        <p className="text-sm text-on-primary">Компаний</p>
                     </div>
                     <div>
                         <p className="text-2xl font-bold">3</p>
-                        <p className="text-sm text-white">Источников</p>
+                        <p className="text-sm text-on-primary">Источников</p>
                     </div>
                 </div>
             </div>
