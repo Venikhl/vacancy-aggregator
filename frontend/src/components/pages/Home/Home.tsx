@@ -1,6 +1,13 @@
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
-export default function Root() {
+export default function Home() {
+    const navLinks = [
+        { label: 'Главная', path: '/' },
+        { label: 'Вакансии', path: '/vacancy' },
+        { label: 'О нас', path: '/about' }, // можешь создать эту страницу позже
+    ];
+
     return (
         <div className="min-h-screen bg-black text-white flex flex-col relative overflow-hidden">
             {/* Top panel */}
@@ -11,13 +18,14 @@ export default function Root() {
                 </div>
 
                 <div className="flex gap-4">
-                    {['Главная', 'Вакансии', 'О нас'].map((item) => (
-                        <button
-                            key={item}
+                    {navLinks.map(({ label, path }) => (
+                        <Link
+                            key={label}
+                            to={path}
                             className="border border-orange-500 text-orange-500 rounded-full px-4 py-1 hover:bg-orange-500 hover:text-black transition"
                         >
-                            {item}
-                        </button>
+                            {label}
+                        </Link>
                     ))}
                 </div>
 
@@ -68,12 +76,10 @@ export default function Root() {
 
                 {/* Vacancies */}
                 <div className="relative z-20 mt-28">
-                    <div
-                        className="bg-[#1e1e1e] rounded-tr-3xl px-8 py-4 flex justify-between items-start shadow-none w-[600px] relative z-30 -ml-4"
-                    >
+                    <div className="bg-[#1e1e1e] rounded-tr-3xl px-8 py-4 flex justify-between items-start shadow-none w-[600px] relative z-30 -ml-4">
                         {/* Appendix */}
                         <div>
-                            <h2 className="text-2xl font-bold mb-1">Последние <br/>найденные вакансии</h2>
+                            <h2 className="text-2xl font-bold mb-1">Последние <br />найденные вакансии</h2>
                         </div>
                         <div className="flex flex-col items-end max-w-[200px]">
                             <p className="text-sm text-gray-400 mb-2 text-right">
