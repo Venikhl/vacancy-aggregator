@@ -1,4 +1,7 @@
 import os
+import aiohttp
+import asyncio
+import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
@@ -57,3 +60,59 @@ class VacancyRecord:
             'title': self.title,
             'url': self.url
         }
+
+
+class HHAPIError(Exception):
+    """Base exception for HH API errors."""
+    pass
+
+
+class HHAuthenticationError(HHAPIError):
+    """Exception raised for authentication errors."""
+    pass
+
+
+class HHAPIParser:
+    """Basic HH.ru API Parser."""
+
+    BASE_URL = "https://api.hh.ru"
+
+    def __init__(self):
+        """Initialize HH API Parser with environment variables."""
+        self.client_id = os.getenv('HH_CLIENT_ID')
+        self.client_secret = os.getenv('HH_CLIENT_SECRET')
+        self.access_token = os.getenv('HH_ACCESS_TOKEN')
+
+        if not all([self.client_id, self.client_secret]):
+            raise ValueError("HH_CLIENT_ID and HH_CLIENT_SECRET must be set in environment")
+
+        self.session: Optional[aiohttp.ClientSession] = None
+        self.logger = logging.getLogger(__name__)
+
+    async def __aenter__(self):
+        """Async context manager entry."""
+        self.session = aiohttp.ClientSession()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit."""
+        if self.session:
+            await self.session.close()
+
+    async def _make_request(self, method: str, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
+        """Make authenticated request to HH API."""
+        if not self.session:
+            raise HHAPIError("Session not initialized")
+
+        url = f"{self.BASE_URL}/{endpoint.lstrip('/')}"
+        headers = {}
+        if self.access_token:
+            headers['Authorization'] = f'Bearer {self.access_token}'
+
+        async with self.session.request(method, url, params=params, headers=headers) as response:
+            if response.status == 401:
+                raise HHAuthenticationError("Authentication failed")
+            if response.status >= 400:
+                raise HHAPIError(f"API request failed: {response.status}")
+
+            return await response.json()
