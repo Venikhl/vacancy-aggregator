@@ -36,7 +36,7 @@ const Login = () => {
                 className="h-full w-full flex flex-col justify-between"
             >
                 <div className="w-full flex flex-col gap-y-9">
-                    <h1 className="text-4xl font-semibold text-on-primary mb-[11px]">
+                    <h1 className="text-4xl font-semibold text-primary mb-[11px]">
                         Вход
                     </h1>
                     <FormField
@@ -92,9 +92,13 @@ const Login = () => {
                                     </FormItem>
                                 )}
                             />
-                            <span>Запомнить меня</span>
+                            <span className="text-on-background">
+                                Запомнить меня
+                            </span>
                         </div>
-                        <Link to="#">Забыли пароль?</Link>
+                        <Link to="#" className="text-on-background">
+                            Забыли пароль?
+                        </Link>
                     </div>
                     <Button type="submit" className="w-full">
                         Submit

@@ -40,13 +40,13 @@ const AuthLayout = () => {
             <div className="relative bg-foreground h-full w-full md:w-1/2">
                 <Link
                     to={link}
-                    className="absolute top-5 right-5 text-primary-active underline"
+                    className="absolute top-5 right-5 text-on-foreground underline"
                 >
                     {linkTitle}
                 </Link>
                 <div
                     className={cn(
-                        'bg-surface w-full max-w-[565px] h-[635px] rounded-[25px]',
+                        'bg-background w-full max-w-[565px] h-[635px] rounded-[25px]',
                         'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2',
                         'flex flex-col justify-center items-center py-[81px] px-[48px]',
                     )}
