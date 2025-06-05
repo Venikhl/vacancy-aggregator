@@ -29,10 +29,10 @@ const AuthLayout = () => {
                         'flex flex-col justify-center',
                     )}
                 >
-                    <h1 className="w-full font-semibold text-[54px] text-on-primary text-center">
+                    <h1 className="w-full font-semibold text-[54px] text-on-background text-center">
                         Найти работу просто!
                     </h1>
-                    <span className="px-[100px] mt-4 text-[18px] text-on-primary text-center">
+                    <span className="px-[100px] mt-4 text-[18px] text-on-background text-center">
                         {title} и найди себе работу мечты в нашей коллекции!
                     </span>
                 </div>

@@ -10,6 +10,7 @@ import { Settings } from '@/components/pages/Settings';
 import { Favorites } from '@/components/pages/Favorites';
 import { AuthLayout } from '@/components/layouts/AuthLayout';
 import { Login } from '@/components/pages/Login';
+import { Register } from '@/components/pages/Register';
 
 export const router = createBrowserRouter([
     {
@@ -62,7 +63,7 @@ export const router = createBrowserRouter([
             },
             {
                 path: 'register',
-                element: <About />,
+                element: <Register />,
             },
         ],
     },
