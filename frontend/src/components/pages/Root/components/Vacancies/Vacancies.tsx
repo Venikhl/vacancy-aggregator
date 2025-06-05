@@ -16,7 +16,7 @@ const Vacancies = () => {
                     <p className="text-sm text-secondary mb-2 text-right">
                         Посмотрите что мы нашли!
                     </p>
-                    <Button className="bg-primary hover:bg-primary-hover text-on-primary rounded-full px-6 py-2">
+                    <Button className="bg-primary hover:bg-primary/80 text-on-primary rounded-full px-6 py-2">
                         Посмотреть все
                     </Button>
                 </div>
@@ -31,7 +31,7 @@ const Vacancies = () => {
                             company="МТС"
                             title="Frontend разработчик"
                             description="Ищем талантливого разработчика с опытом React и Tailwind CSS."
-                            tags={['web', 'remote', 'от 120000₽']}
+                            tags={['Web', 'Remote', 'От 120000₽']}
                             phone="8 (800) 555 35 35"
                         />
                     ))}

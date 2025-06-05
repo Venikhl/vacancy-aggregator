@@ -30,7 +30,7 @@ const Sidebar: React.FC = () => {
                     alt="avatar"
                     className="w-20 h-20 rounded-full object-cover mb-4"
                 />
-                <div className="font-bold text-[1.1rem] text-on-primary">
+                <div className="font-bold text-[1.1rem] text-on-foreground">
                     Вера Неттор
                 </div>
                 <div className="text-[0.9rem] text-secondary">
@@ -47,10 +47,10 @@ const Sidebar: React.FC = () => {
                             cn(
                                 'flex items-center gap-3 w-full box-border',
                                 'py-[0.8rem] px-4 rounded-l-[20px]',
-                                'text-[#d3d3d3] transition-colors duration-200 no-underline',
+                                'text-on-foreground transition-colors duration-200 no-underline',
 
                                 isActive
-                                    ? 'bg-foreground text-primary-active font-bold'
+                                    ? 'bg-foreground text-on-background font-bold'
                                     : 'hover:bg-foreground hover:text-primary-active',
                             )
                         }
