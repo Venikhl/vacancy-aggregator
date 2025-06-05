@@ -17,18 +17,17 @@ const Vacancy = ({
     phone,
 }: VacancyProps) => {
     return (
-        <div className="bg-fore border border-primary-active text-on-primary rounded-xl p-4 flex flex-col gap-2 shadow-md hover:shadow-orange-500/30 transition-shadow">
+        <div className="bg-fore border border-primary text-on-foreground rounded-xl p-4 flex flex-col gap-2 shadow-md hover:shadow-primary/30 transition-shadow">
             <div className="flex items-center gap-2">
                 <span className="bg-primary text-on-primary text-xs px-2 py-1 rounded-full font-semibold">
                     {company}
                 </span>
             </div>
             <h3 className="text-lg font-semibold">{title}</h3>
-            <p className="text-sm text-gray-400">{description}</p>
+            <p className="text-sm text-secondary">{description}</p>
             <div className="flex flex-wrap gap-2 mt-2 text-xs">
                 {tags.map((tag, index) => (
-                    // <span className="bg-black border border-gray-500 px-2 py-1 rounded-full" key={index}>{tag}</span>
-                    <Badge key={index} className="bg-primary/50 rounded-full">
+                    <Badge key={index} className="bg-primary/90 rounded-full">
                         {tag}
                     </Badge>
                 ))}
