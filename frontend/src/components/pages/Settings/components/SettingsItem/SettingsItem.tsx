@@ -20,10 +20,10 @@ import type {
     FieldValues,
     Path,
 } from 'react-hook-form';
-import { FaChevronRight } from 'react-icons/fa';
 import { Button } from '@/components/ui/button.tsx';
 import { z } from 'zod';
 import type { ChangeEvent } from 'react';
+import { ChevronRight } from 'lucide-react';
 
 interface SettingsItemProps<T extends FieldValues = FieldValues> {
     name: Path<T>;
@@ -81,7 +81,10 @@ const SettingsItem = <T extends FieldValues = FieldValues>({
                             {getValue()}
                         </div>
                     </div>
-                    <FaChevronRight className="text-secondary shrink-0" />
+                    <ChevronRight
+                        size={26}
+                        className="text-secondary shrink-0"
+                    />
                 </Button>
             </DialogTrigger>
 
