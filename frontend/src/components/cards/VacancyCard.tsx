@@ -15,16 +15,16 @@ export const VacancyCard: React.FC<VacancyCardProps> = ({ title, company, locati
         <span>{timeAgo || 'Parsed recently'}</span>
       </div>
       <div className="flex items-center gap-2">
-        <span className="bg-orange-500 text-white text-xs font-semibold px-3 py-1 rounded-full">🔶 {company}</span>
+        <span className="bg-[#1e1e1e] text-white text-xs font-semibold px-3 py-1 rounded-full">🔶 {company}</span>
       </div>
       <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
       <p className="text-gray-600">{location}</p>
       {salary && <p className="text-green-600 font-medium">{salary}</p>}
       <div className="flex justify-end gap-2 mt-3">
-        <button className="border border-gray-300 text-gray-700 px-4 py-1 rounded-md hover:bg-gray-100">
+        <button className="border border-[#1e1e1e] text-[#1e1e1e] px-4 py-1 rounded-md hover:bg-gray-100">
           Сохранить
         </button>
-        <button className="bg-orange-500 text-white px-4 py-1 rounded-md hover:bg-orange-600">
+        <button className="bg-[#1e1e1e] text-white px-4 py-1 rounded-md hover:bg-gray-800">
           Откликнуться
         </button>
       </div>

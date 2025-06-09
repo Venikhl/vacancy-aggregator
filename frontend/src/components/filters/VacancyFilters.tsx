@@ -11,7 +11,7 @@ export const VacancyFilters: React.FC = () => {
           placeholder="Должность, навыки, компания"
           className="flex-grow rounded-md border border-gray-300 bg-white px-4 py-2 text-sm placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-orange-500"
         />
-        <button className="flex items-center gap-1 rounded-md bg-orange-600 hover:bg-orange-700 px-4 py-2 text-sm text-white">
+        <button className="flex items-center gap-1 rounded-md bg-black hover:bg-gray-800 px-4 py-2 text-sm text-white">
           <Search size={16} />
           Поиск
         </button>
@@ -19,7 +19,6 @@ export const VacancyFilters: React.FC = () => {
 
       {/* фильтры */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-
         {/* Ключевые слова */}
         <div className="flex flex-col">
           <label className="text-sm mb-1">Ключевые слова</label>
@@ -85,16 +84,16 @@ export const VacancyFilters: React.FC = () => {
           </div>
         </div>
 
-        {/* Кнопки */}
-        <div className="flex flex-col gap-2">
-          <button className="px-4 py-2 text-sm bg-gray-200 text-black rounded-md hover:bg-gray-300">
-            Сбросить
-          </button>
-          <button className="px-4 py-2 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700">
-            Применить фильтры
-          </button>
-        </div>
+      </div>
 
+      {/* Кнопки — отдельный блок, выровнен по правому краю */}
+      <div className="flex justify-end gap-4 mt-4">
+        <button className="px-4 py-2 text-sm bg-[#1e1e1e] text-white rounded-md hover:bg-gray-800">
+          Сбросить
+        </button>
+        <button className="px-4 py-2 text-sm bg-[#1e1e1e] text-white rounded-md hover:bg-gray-800">
+          Применить фильтры
+        </button>
       </div>
     </div>
   );
