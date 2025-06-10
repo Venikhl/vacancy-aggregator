@@ -1,9 +1,8 @@
-"""init
+"""Initial database schema creation.
 
 Revision ID: a1ce177b7596
 Revises: 
 Create Date: 2025-06-08 15:04:32.055456
-
 """
 from typing import Sequence, Union
 
