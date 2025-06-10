@@ -116,3 +116,52 @@ class HHAPIParser:
                 raise HHAPIError(f"API request failed: {response.status}")
 
             return await response.json()
+
+    async def _search_vacancies_page(self, filters: VacancyFilters, page: int = 0) -> Dict[str, Any]:
+        """Search vacancies for a specific page."""
+        params = {
+            'page': page,
+            'per_page': 100,
+        }
+
+        if filters.text:
+            params['text'] = filters.text
+        if filters.area:
+            params['area'] = filters.area
+        if filters.professional_role:
+            params['professional_role'] = filters.professional_role
+        if filters.experience:
+            params['experience'] = filters.experience.value
+        if filters.employment:
+            params['employment'] = filters.employment.value
+        if filters.schedule:
+            params['schedule'] = filters.schedule.value
+
+        return await self._make_request('GET', '/vacancies', params=params)
+
+    async def search_vacancies_simple(self, filters: VacancyFilters) -> List[VacancyRecord]:
+        """Simple vacancy search with basic pagination."""
+        all_vacancies = []
+        page = 0
+
+        while True:
+            response = await self._search_vacancies_page(filters, page)
+            vacancies = response.get('items', [])
+            if not vacancies:
+                break
+
+            for vacancy in vacancies:
+                record = VacancyRecord(
+                    vacancy_id=None,
+                    external_id=str(vacancy['id']),
+                    title=vacancy.get('name', ''),
+                    url=vacancy.get('alternate_url')
+                )
+                all_vacancies.append(record)
+
+            # Check if we've reached the last page
+            if page >= response.get('pages', 1) - 1:
+                break
+            page += 1
+
+        return all_vacancies
