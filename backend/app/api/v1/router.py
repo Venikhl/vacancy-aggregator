@@ -3,18 +3,20 @@
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordBearer
 from .models import AccessToken, Login, Register, Resume, ResumeList, \
-                    ResumeShort, ResumesView, Salary, Tokens, RefreshToken, \
-                    UpdateMe, User, Vacancy, VacancyList, VacancyShort, \
-                    VacanciesView, View
-
+    ResumeShort, ResumesView, Salary, Tokens, RefreshToken, \
+    UpdateMe, User, Vacancy, VacancyList, VacancyShort, \
+    VacanciesView, View
 
 router = APIRouter()
-
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-@router.post("/register")
+@router.post("/register", responses={
+    200: {"model": Tokens, "description": "User successfully registered"},
+    400: {"description": "Email or username already exists"},
+    422: {"description": "Validation error in registration data"}
+})
 def register(register: Register) -> Tokens:
     """Register a user."""
     return Tokens(
@@ -23,7 +25,11 @@ def register(register: Register) -> Tokens:
     )
 
 
-@router.post("/login")
+@router.post("/login", responses={
+    200: {"model": Tokens, "description": "Successfully logged in"},
+    401: {"description": "Invalid email or password"},
+    422: {"description": "Validation error in login data"}
+})
 def login(login: Login) -> Tokens:
     """Login."""
     return Tokens(
@@ -32,19 +38,33 @@ def login(login: Login) -> Tokens:
     )
 
 
-@router.post("/refresh_token")
+@router.post("/refresh_token", responses={
+    200: {"model": AccessToken, "description": "Access token refreshed"},
+    401: {"description": "Invalid or expired refresh token"},
+    422: {"description": "Refresh token not provided or invalid format"}
+})
 def refresh_token(refresh_token: RefreshToken) -> AccessToken:
     """Refresh expired access token."""
     return AccessToken(access_token="access_token")  # nosec
 
 
-@router.post("/update_me")
+@router.post("/update_me", responses={
+    200: {"description": "Successfully updated"},
+    401: {"description": "Missing or invalid access token"},
+    403: {"description": "Access denied"},
+    422: {"description": "Validation error in update data"}
+})
 def update_me(update_me: UpdateMe, token: str = Depends(oauth2_scheme)):
     """Update user information. Requires authentication."""
     pass
 
 
-@router.post("/get_me")
+@router.post("/get_me", responses={
+    200: {"description": "Successfully updated"},
+    401: {"description": "Missing or invalid access token"},
+    403: {"description": "Access denied"},
+    422: {"description": "Validation error in update data"}
+})
 def get_me(token: str = Depends(oauth2_scheme)) -> User:
     """Get user information. Requires authentication."""
     return User(
@@ -54,10 +74,13 @@ def get_me(token: str = Depends(oauth2_scheme)) -> User:
     )
 
 
-@router.post("/liked_vacancies")
+@router.post("/liked_vacancies", responses={
+    200: {"model": VacancyList, "description": "List of liked vacancies returned"},
+    401: {"description": "Missing or invalid access token"}
+})
 def liked_vacancies(
-    view: View,
-    token: str = Depends(oauth2_scheme)
+        view: View,
+        token: str = Depends(oauth2_scheme)
 ) -> VacancyList:
     """View the list of liked vacancies. Requires authentication."""
     return VacancyList(
@@ -72,22 +95,33 @@ def liked_vacancies(
     )
 
 
-@router.get("/like_vacancy/{id}")
+@router.get("/like_vacancy/{id}", responses={
+    200: {"description": "Vacancy added to likes"},
+    401: {"description": "Missing or invalid access token"},
+    404: {"description": "Vacancy not found"}
+})
 def like_vacancy(id: int, token: str = Depends(oauth2_scheme)):
     """Add a vacancy to liked. Requires authentication."""
     pass
 
 
-@router.get("/unlike_vacancy/{id}")
+@router.get("/unlike_vacancy/{id}", responses={
+    200: {"description": "Vacancy removed from likes"},
+    401: {"description": "Missing or invalid access token"},
+    404: {"description": "Vacancy not found"}
+})
 def unlike_vacancy(id: int, token: str = Depends(oauth2_scheme)):
     """Remove a vacancy from liked. Requires authentication."""
     pass
 
 
-@router.post("/liked_resumes")
+@router.post("/liked_resumes", responses={
+    200: {"model": ResumeList, "description": "List of liked resumes returned"},
+    401: {"description": "Missing or invalid access token"}
+})
 def liked_resumes(
-    view: View,
-    token: str = Depends(oauth2_scheme)
+        view: View,
+        token: str = Depends(oauth2_scheme)
 ) -> ResumeList:
     """View the list of liked resumes. Requires authentication."""
     return ResumeList(
@@ -102,19 +136,29 @@ def liked_resumes(
     )
 
 
-@router.get("/like_resume/{id}")
+@router.get("/like_resume/{id}", responses={
+    200: {"description": "Resume added to likes"},
+    401: {"description": "Missing or invalid access token"},
+    404: {"description": "Resume not found"}
+})
 def like_resume(id: int, token: str = Depends(oauth2_scheme)):
     """Add a resume to liked. Requires authentication."""
     pass
 
 
-@router.get("/unlike_resume/{id}")
+@router.get("/unlike_resume/{id}", responses={
+    200: {"description": "Resume removed from likes"},
+    401: {"description": "Missing or invalid access token"},
+    404: {"description": "Resume not found"}
+})
 def unlike_resume(id: int, token: str = Depends(oauth2_scheme)):
     """Remove a resume from liked. Requires authentication."""
     pass
 
 
-@router.post("/vacancies")
+@router.post("/vacancies", responses={
+    200: {"model": VacancyList, "description": "List of all available vacancies"},
+})
 def vacancies(vacancies_view: VacanciesView) -> VacancyList:
     """List all available vacancies."""
     return VacancyList(
@@ -129,7 +173,10 @@ def vacancies(vacancies_view: VacanciesView) -> VacancyList:
     )
 
 
-@router.get("/vacancy/{id}")
+@router.get("/vacancy/{id}", responses={
+    200: {"model": Vacancy, "description": "Vacancy details"},
+    404: {"description": "Vacancy not found"}
+})
 def vacancy(id: int) -> Vacancy:
     """Get a vacancy by ID."""
     return Vacancy(
@@ -141,7 +188,9 @@ def vacancy(id: int) -> Vacancy:
     )
 
 
-@router.post("/resumes")
+@router.post("/resumes", responses={
+    200: {"model": ResumeList, "description": "List of all available resumes"},
+})
 def resumes(resumes_view: ResumesView) -> ResumeList:
     """List all available resumes."""
     return ResumeList(
@@ -156,7 +205,10 @@ def resumes(resumes_view: ResumesView) -> ResumeList:
     )
 
 
-@router.get("/resume/{id}")
+@router.get("/resume/{id}", responses={
+    200: {"model": Resume, "description": "Resume details"},
+    404: {"description": "Resume not found"}
+})
 def resume(id: int) -> Resume:
     """Get a resume by ID."""
     return Resume(
