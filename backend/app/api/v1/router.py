@@ -18,7 +18,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 def register(register: Register) -> Tokens:
     """Register a user."""
     return Tokens(
-        access_token="access_token", # nosec
+        access_token="access_token",  # nosec
         refresh_token="refresh_token"
     )
 
@@ -27,7 +27,7 @@ def register(register: Register) -> Tokens:
 def login(login: Login) -> Tokens:
     """Login."""
     return Tokens(
-        access_token="access_token", # nosec
+        access_token="access_token",  # nosec
         refresh_token="refresh_token"
     )
 
@@ -35,7 +35,7 @@ def login(login: Login) -> Tokens:
 @router.post("/refresh_token")
 def refresh_token(refresh_token: RefreshToken) -> AccessToken:
     """Refresh expired access token."""
-    return AccessToken(access_token="access_token") # nosec
+    return AccessToken(access_token="access_token")  # nosec
 
 
 @router.post("/update_me")
