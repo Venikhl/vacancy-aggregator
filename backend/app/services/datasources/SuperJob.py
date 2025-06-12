@@ -51,26 +51,23 @@ def all_vacancy_catalog():
         "catalogues": catalogs,
         "count": 40,
     }
-    
     response = requests.get(url, headers=headers, params=params)
     json_data = json.loads(response.content.decode('utf-8'))
     results = []
-    with open('all_vacancy_catalog.json', 'a') as file:
-        json.dump(json_data, file, ensure_ascii=False, indent=4)
+    results.append(json_data) 
     total = json_data['total']
     amount = total // 40
-
     for i in range(1, amount+1):
         response = requests.get(url, headers=headers, params=params)
         json_data = json.loads(response.content.decode('utf-8'))
         results.append(json_data)
-    with open('all_vacancy_catalog_test.json', 'a') as file:
+    with open('all_vacancy_catalog.json', 'a') as file:
         json.dump(results, file, ensure_ascii=False, indent=4)
         file.write('\n')
 
 
 def extract_data():
-    name = 'all_vacancy_catalog_test.json'
+    name = 'all_vacancy_catalog.json'
     with open(name, 'r', encoding='utf-8') as file:
         json_data = json.load(file)
     return json_data
@@ -110,7 +107,6 @@ def find_vacancies(
 def main():
 
     all_vacancy_catalog()
-
 
 def test_parsing():
 
