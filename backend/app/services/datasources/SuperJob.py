@@ -57,7 +57,8 @@ def all_vacancy_catalog():
     total = json_data['total']
     amount = total // 40
     for i in range(1, amount+1):
-        response = requests.get(url, headers=headers, params=params, timeout=10)
+        response = requests.get(
+            url, headers=headers, params=params, timeout=10)
         json_data = json.loads(response.content.decode('utf-8'))
         results.append(json_data)
     with open('all_vacancy_catalog.json', 'a') as file:
@@ -98,7 +99,7 @@ def find_vacancies(
         "payment_to": payment_to
     }
 
-    response = requests.get(url, headers=headers, params=params,timeout=10)
+    response = requests.get(url, headers=headers, params=params, timeout=10)
     create_json_file('response.json', response)
     return json.loads(response.content.decode('utf-8'))
 
