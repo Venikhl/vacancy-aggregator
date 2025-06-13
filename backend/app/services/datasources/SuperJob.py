@@ -31,7 +31,7 @@ headers = {
 
 def vacancy_catalog():
     url = "https://api.superjob.ru/2.0/catalogues/"
-    response = requests.get(url)
+    response = requests.get(url, timeout=10)
     create_json_file("catalog.json", response, mode='w')
 
 
@@ -50,14 +50,14 @@ def all_vacancy_catalog():
         "catalogues": catalogs,
         "count": 40,
     }
-    response = requests.get(url, headers=headers, params=params)
+    response = requests.get(url, headers=headers, params=params, timeout=10)
     json_data = json.loads(response.content.decode('utf-8'))
     results = []
     results.append(json_data)
     total = json_data['total']
     amount = total // 40
     for i in range(1, amount+1):
-        response = requests.get(url, headers=headers, params=params)
+        response = requests.get(url, headers=headers, params=params, timeout=10)
         json_data = json.loads(response.content.decode('utf-8'))
         results.append(json_data)
     with open('all_vacancy_catalog.json', 'a') as file:
@@ -98,7 +98,7 @@ def find_vacancies(
         "payment_to": payment_to
     }
 
-    response = requests.get(url, headers=headers, params=params,)
+    response = requests.get(url, headers=headers, params=params,timeout=10)
     create_json_file('response.json', response)
     return json.loads(response.content.decode('utf-8'))
 
@@ -115,14 +115,14 @@ def test_parsing():
             f"https://api.superjob.ru/2.0/vacancies/"
             f"?catalogues=(260, 306)&page={i}&count=40")
 
-        resposne = requests.get(url, headers=headers)
+        resposne = requests.get(url, headers=headers, timeout=10)
         create_json_file('rubbish.json', resposne, mode='a')
 
 
 def parse_catalog_cleaned():
     url = 'https://api.superjob.ru/2.0/catalogues/'
     parsed__cleaned = []
-    response = requests.get(url)
+    response = requests.get(url, timeout=10)
     json_data = response.json()
     for i in json_data:
         positions = []
