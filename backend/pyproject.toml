@@ -4,7 +4,14 @@ version = "0.1.0"
 description = "Backend application for vacancy-aggregator"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = ["fastapi>=0.115.12", "uvicorn>=0.34.3"]
+dependencies = [
+    "alembic>=1.16.1",
+    "asyncpg>=0.30.0",
+    "fastapi>=0.115.12",
+    "pydantic>=2.11.5",
+    "sqlalchemy>=2.0.41",
+    "uvicorn>=0.34.3",
+]
 
 [dependency-groups]
 dev = ["bandit>=1.8.3", "flake8>=7.2.0", "pydocstyle>=6.3.0", "pytest>=8.3.5"]

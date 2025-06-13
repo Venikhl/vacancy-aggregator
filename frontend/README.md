@@ -1,4 +1,4 @@
-# Frontend for Vacancy Aggregator
+# Frontend for Vacancies Aggregator
 
 ## Local launch instructions:
 
