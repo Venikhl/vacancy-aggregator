@@ -47,17 +47,40 @@ class VacancyFilters(BaseModel):
 
 @dataclass
 class VacancyRecord:
-    """Basic vacancy record structure."""
+    """Complete vacancy record structure."""
     vacancy_id: Optional[int]
     external_id: str
+    source_id: int
     title: str
+    description: Optional[str]
+    company_id: Optional[int]
+    salary_type_id: Optional[int]
+    salary_currency: Optional[str]
+    salary_value: Optional[float]
+    experience_category_id: Optional[int]
+    location_id: Optional[int]
+    specialization_id: Optional[int]
+    published_at: Optional[str]
+    contacts: Optional[str]
     url: Optional[str]
 
     def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization."""
         return {
             'vacancy_id': self.vacancy_id,
             'external_id': self.external_id,
+            'source_id': self.source_id,
             'title': self.title,
+            'description': self.description,
+            'company_id': self.company_id,
+            'salary_type_id': self.salary_type_id,
+            'salary_currency': self.salary_currency,
+            'salary_value': self.salary_value,
+            'experience_category_id': self.experience_category_id,
+            'location_id': self.location_id,
+            'specialization_id': self.specialization_id,
+            'published_at': self.published_at,
+            'contacts': self.contacts,
             'url': self.url
         }
 
@@ -165,3 +188,27 @@ class HHAPIParser:
             page += 1
 
         return all_vacancies
+
+    def _extract_salary_info(self, salary_data: Optional[Dict]) -> tuple:
+        """Extract salary information and determine salary type."""
+        if not salary_data:
+            return None, None, None
+
+        salary_from = salary_data.get('from')
+        salary_to = salary_data.get('to')
+        currency = salary_data.get('currency')
+
+        if salary_from and salary_to:
+            salary_type_id = 3  # Range
+            salary_value = (salary_from + salary_to) / 2
+        elif salary_from:
+            salary_type_id = 1  # From
+            salary_value = salary_from
+        elif salary_to:
+            salary_type_id = 2  # Up to
+            salary_value = salary_to
+        else:
+            salary_type_id = None
+            salary_value = None
+
+        return salary_type_id, currency, salary_value
