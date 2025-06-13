@@ -32,8 +32,7 @@ headers = {
 def vacancy_catalog():
     url = "https://api.superjob.ru/2.0/catalogues/"
     response = requests.get(url)
-    result = response.content.decode('utf-8')
-    create_json_file("catalog.json", response)
+    create_json_file("catalog.json", response, mode='w')
 
 
 def choose_catalogues() -> List[int]:
@@ -54,7 +53,7 @@ def all_vacancy_catalog():
     response = requests.get(url, headers=headers, params=params)
     json_data = json.loads(response.content.decode('utf-8'))
     results = []
-    results.append(json_data) 
+    results.append(json_data)
     total = json_data['total']
     amount = total // 40
     for i in range(1, amount+1):
@@ -107,6 +106,7 @@ def find_vacancies(
 def main():
 
     all_vacancy_catalog()
+
 
 def test_parsing():
 
