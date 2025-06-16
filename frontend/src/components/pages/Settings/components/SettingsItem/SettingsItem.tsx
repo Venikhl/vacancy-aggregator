@@ -7,65 +7,25 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-    FormControl,
-    FormField,
-    FormItem,
-    FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import type {
-    Control,
-    ControllerRenderProps,
-    FieldValues,
-    Path,
-} from 'react-hook-form';
-import { Button } from '@/components/ui/button.tsx';
-import { z } from 'zod';
-import type { ChangeEvent } from 'react';
+import type { FieldValues, Path } from 'react-hook-form';
+import { Button } from '@/components/ui/button';
 import { ChevronRight } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { FormMessage } from '@/components/ui/form';
 
 interface SettingsItemProps<T extends FieldValues = FieldValues> {
     name: Path<T>;
-    fieldSchema:
-        | z.ZodString
-        | z.ZodDate
-        | z.ZodEnum<['Мужской', 'Женский', 'Другое']>;
-    value: string;
-    control: Control<T>;
+    value: T[keyof T];
     onSave: () => void;
+    children: ReactNode;
 }
 
 const SettingsItem = <T extends FieldValues = FieldValues>({
-    fieldSchema,
     name,
     value,
-    control,
     onSave,
+    children,
 }: SettingsItemProps<T>) => {
-    const getType = () => {
-        if (fieldSchema instanceof z.ZodDate) return 'date';
-        if (name.toLowerCase().includes('password')) return 'password';
-        return 'text';
-    };
-
-    const getValue = () => {
-        if (getType() === 'password')
-            return Array.from({ length: value.length || 8 }).join('*');
-        return value;
-    };
-
-    const onValueChange = (
-        e: ChangeEvent<HTMLInputElement>,
-        field: ControllerRenderProps<T, Path<T>>,
-    ) => {
-        if (fieldSchema instanceof z.ZodDate) {
-            field.onChange(new Date(e.target.value));
-        } else {
-            field.onChange(e.target.value);
-        }
-    };
-
     return (
         <Dialog>
             <DialogTrigger asChild>
@@ -74,11 +34,9 @@ const SettingsItem = <T extends FieldValues = FieldValues>({
                     className="w-full h-fit flex justify-between items-center py-4 border-b border-primary text-left hover:bg-background transition rounded-none"
                 >
                     <div>
-                        <div className="text-secondary text-sm">
-                            {fieldSchema.description}
-                        </div>
-                        <div className="font-medium break-words max-w-[70vw]">
-                            {getValue()}
+                        <div className="text-secondary text-sm">{name}</div>
+                        <div className="font-semibold text-[18px] break-words max-w-[70vw]">
+                            {value.toString()}
                         </div>
                     </div>
                     <ChevronRight
@@ -91,28 +49,14 @@ const SettingsItem = <T extends FieldValues = FieldValues>({
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle className="text-primary">
-                        Изменить {fieldSchema.description?.toLowerCase()}
+                        Изменить {name.toLowerCase()}
                     </DialogTitle>
                 </DialogHeader>
 
-                <FormField
-                    control={control}
-                    name={name}
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormControl>
-                                <Input
-                                    {...field}
-                                    placeholder={fieldSchema.description}
-                                    type={getType()}
-                                    value={field.value ?? ''}
-                                    onChange={(e) => onValueChange(e, field)}
-                                />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                {children}
+
+                <FormMessage />
+
                 <DialogFooter>
                     <DialogClose>
                         <Button variant="outline">Отменить</Button>
