@@ -212,3 +212,46 @@ class HHAPIParser:
             salary_value = None
 
         return salary_type_id, currency, salary_value
+
+    async def get_vacancy_details(self, vacancy_id: str) -> Dict[str, Any]:
+        """Get detailed information about a specific vacancy."""
+        return await self._make_request('GET', f'/vacancies/{vacancy_id}')
+
+    def _map_experience_to_category(self, experience_data: Optional[Dict]) -> Optional[int]:
+        """Map HH experience to category ID."""
+        if not experience_data:
+            return None
+
+        exp_id = experience_data.get('id', '')
+        mapping = {
+            'noExperience': 1,
+            'between1And3': 2,
+            'between3And6': 3,
+            'moreThan6': 4
+        }
+        return mapping.get(exp_id)
+
+    async def _convert_to_vacancy_record(self, vacancy_data: Dict, source_id: int = 1) -> VacancyRecord:
+        """Convert HH API vacancy data to structured VacancyRecord."""
+        salary_type_id, salary_currency, salary_value = self._extract_salary_info(
+            vacancy_data.get('salary')
+        )
+
+        return VacancyRecord(
+            vacancy_id=None,
+            external_id=str(vacancy_data['id']),
+            source_id=source_id,
+            title=vacancy_data.get('name', ''),
+            description=vacancy_data.get('snippet', {}).get('requirement', ''),
+            company_id=None,
+            salary_type_id=salary_type_id,
+            salary_currency=salary_currency,
+            salary_value=salary_value,
+            experience_category_id=self._map_experience_to_category(vacancy_data.get('experience')),
+            location_id=None,
+            specialization_id=vacancy_data.get('professional_roles', [{}])[0].get('id') if vacancy_data.get(
+                'professional_roles') else None,
+            published_at=vacancy_data.get('published_at'),
+            contacts=None,
+            url=vacancy_data.get('alternate_url')
+        )
