@@ -12,14 +12,14 @@ type SettingsFormData = z.infer<typeof settingsSchema>;
 
 interface CommonInfoProps {
     form: UseFormReturn<SettingsFormData>;
+    handleSave: () => void;
     values: SettingsFormData;
-    onSubmit: () => void;
 }
 
-const CommonInfo = ({ form, values, onSubmit }: CommonInfoProps) => {
+const CommonInfo = ({ form, handleSave, values }: CommonInfoProps) => {
     return (
         <section>
-            <h2>Общая Информация</h2>
+            <h2 className="font-semibold text-3xl pl-3">Общая Информация</h2>
 
             <FormField
                 control={form.control}
@@ -30,7 +30,7 @@ const CommonInfo = ({ form, values, onSubmit }: CommonInfoProps) => {
                             <SettingsItem
                                 name="Имя"
                                 value={values.fullName}
-                                onSave={onSubmit}
+                                onSave={handleSave}
                             >
                                 <Input placeholder="Введите имя" {...field} />
                             </SettingsItem>
@@ -50,7 +50,7 @@ const CommonInfo = ({ form, values, onSubmit }: CommonInfoProps) => {
                                 value={format(values.birthDate, 'd MMMM y', {
                                     locale: ru,
                                 })}
-                                onSave={onSubmit}
+                                onSave={handleSave}
                             >
                                 <DateTimePicker
                                     value={field.value}

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form } from '@/components/ui/form.tsx';
 import { CommonInfo } from './components/CommonInfo';
+import { useState } from 'react';
 
 const Settings = () => {
     type SettingsFormData = z.infer<typeof settingsSchema>;
@@ -14,26 +15,28 @@ const Settings = () => {
             fullName: 'Вера Неттор',
             birthDate: new Date(2000, 12, 31),
             gender: 'Женский',
-            email: 'VeraNettor2002@gmail.com',
             nickname: 'VeraNettor',
-            password: '',
         },
     });
-
-    const values = form.getValues();
+    const [values, setValues] = useState<SettingsFormData>(form.getValues());
 
     function onSubmit(values: SettingsFormData) {
         console.log('submitting');
         console.log(values);
     }
 
+    const handleSave = async () => {
+        await form.handleSubmit(onSubmit)();
+        setValues(form.getValues());
+    };
+
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
                 <CommonInfo
                     form={form}
-                    onSubmit={form.handleSubmit(onSubmit)}
                     values={values}
+                    handleSave={handleSave}
                 />
             </form>
         </Form>
