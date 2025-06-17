@@ -1,65 +1,36 @@
 import React, { useEffect, useState } from "react";
-import { getVacancies } from "@/api";
 import { VacancyCard } from "@/components/cards/VacancyCard";
 import { VacancyFilters } from "@/components/filters/VacancyFilters";
 import type { Filters } from "@/types/filters";
+import { useVacancies } from "./hooks/useVacancies";
 
-interface Salary {
-  value: number;
-  currency: string;
-}
-
-interface Vacancy {
-  id: string;
-  title: string;
-  salary: Salary | null;
-}
+const defaultFilters: Filters = {
+  keyword: "",
+  region: "",
+  salary: { min: 30000, max: 150000 },
+  experience: [],
+  sources: [],
+};
 
 export const Vacancies: React.FC = () => {
-  const [vacancies, setVacancies] = useState<Vacancy[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<Filters>({
-    keyword: "",
-    region: "",
-    salary: { min: 30000, max: 150000 },
-    experience: [],
-    sources: [],
-  });
+  const [filters, setFilters] = useState<Filters>(defaultFilters);
+  const { vacancies, loading, fetchVacancies } = useVacancies();
 
-  const fetchVacancies = async () => {
-    setLoading(true);
-    try {
-      const cleanedFilters: Record<string, any> = {};
-      if (filters.keyword.trim()) cleanedFilters.keyword = filters.keyword.trim();
-      if (filters.region) cleanedFilters.region = filters.region;
-      if (filters.salary.min || filters.salary.max) cleanedFilters.salary = filters.salary;
-      if (filters.experience.length > 0) cleanedFilters.experience = filters.experience;
-      if (filters.sources.length > 0) cleanedFilters.sources = filters.sources;
-
-      console.log("👉 Отправка запроса с фильтрами:", cleanedFilters);
-
-      const response = await getVacancies(0, 20, cleanedFilters);
-      setVacancies(response.data.vacancies || []);
-    } catch (error) {
-      console.error("Ошибка при загрузке вакансий:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loadVacancies = React.useCallback(() => {
+    fetchVacancies({
+      ...filters,
+      experience: filters.experience?.filter((v): v is string => typeof v === "string"),
+      sources: filters.sources?.filter((v): v is string => typeof v === "string"),
+    });
+  }, [filters, fetchVacancies]);
 
   const handleReset = () => {
-    setFilters({
-      keyword: "",
-      region: "",
-      salary: { min: 30000, max: 150000 },
-      experience: [],
-      sources: [],
-    });
+    setFilters({ ...defaultFilters });
   };
 
   useEffect(() => {
-    fetchVacancies();
-  }, []);
+    loadVacancies();
+  }, [loadVacancies]);
 
   return (
     <div className="min-h-screen px-4 py-6 text-on-background">
@@ -67,32 +38,37 @@ export const Vacancies: React.FC = () => {
         <VacancyFilters
           filters={filters}
           onChange={setFilters}
-          onApply={fetchVacancies}
+          onApply={loadVacancies}
           onReset={handleReset}
         />
 
         <div className="space-y-6">
           {loading ? (
-            <p className="text-sm text-muted-foreground">Загрузка...</p>
+            <p className="text-sm text-muted-foreground animate-pulse">Загрузка вакансий...</p>
           ) : (
             <>
               <p className="text-sm text-muted-foreground">
                 Найдено результатов: {vacancies.length}
               </p>
-              {vacancies.map((v) => (
-                <VacancyCard
-                  key={v.id}
-                  title={v.title}
-                  company="—"
-                  location="—"
-                  salary={
-                    v.salary
-                      ? `${v.salary.value} ${v.salary.currency}`
-                      : "Зарплата не указана"
-                  }
-                  timeAgo="—"
-                />
-              ))}
+
+              {vacancies.length === 0 ? (
+                <p className="text-muted-foreground italic">Нет подходящих вакансий.</p>
+              ) : (
+                vacancies.map((v) => (
+                  <VacancyCard
+                    key={v.id}
+                    title={v.title}
+                    company="—"
+                    location="—"
+                    salary={
+                      v.salary?.value
+                        ? `${v.salary.value.toLocaleString()} ${v.salary.currency}`
+                        : `${filters.salary?.max?.toLocaleString() ?? "—"} ₽`
+                    }
+                    timeAgo="—"
+                  />
+                ))
+              )}
             </>
           )}
         </div>

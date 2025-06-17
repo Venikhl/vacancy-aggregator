@@ -1,10 +1,10 @@
 export interface Filters {
-  keyword: string;
-  region: string;
-  salary: {
-    min: number;
-    max: number;
+  keyword?: string;
+  region?: string;
+  salary?: {
+    min?: number;
+    max?: number;
   };
-  experience: string[];
-  sources: string[];
+  experience?: string[];
+  sources?: string[];
 }

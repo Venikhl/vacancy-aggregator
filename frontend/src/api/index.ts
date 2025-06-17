@@ -1,13 +1,16 @@
-// api.ts (или где ты определяешь API-запросы)
-import axios from "axios";
+import axios from 'axios';
+import type { Filters } from '@/types/filters';
 
 export const getVacancies = async (
   offset: number,
   count: number,
-  filters: any
+  filters: Filters
 ) => {
-  return axios.post("/api/v1/vacancies", {
+  return axios.post('/api/v1/vacancies', {
     filter: filters,
-    view: { offset, count } // <-- ВОТ ЗДЕСЬ
+    view: {
+      offset,
+      count,
+    },
   });
 };
