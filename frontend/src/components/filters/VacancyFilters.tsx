@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectContent,
   SelectItem,
+  SelectValue,
 } from '@/components/ui/select';
 
 export type Filters = {
@@ -92,7 +93,9 @@ export const VacancyFilters: React.FC<Props> = ({
                 <FormLabel>Регион</FormLabel>
                 <FormControl>
                   <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger />
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Выберите регион" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Москва">Москва</SelectItem>
                       <SelectItem value="Санкт-Петербург">Санкт-Петербург</SelectItem>
@@ -103,6 +106,8 @@ export const VacancyFilters: React.FC<Props> = ({
               </FormItem>
             )}
           />
+
+
 
 
 
