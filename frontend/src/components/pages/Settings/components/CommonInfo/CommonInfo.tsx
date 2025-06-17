@@ -2,11 +2,18 @@ import { FormControl, FormField, FormItem } from '@/components/ui/form.tsx';
 import { SettingsItem } from '@/components/pages/Settings/components/SettingsItem';
 import { Input } from '@/components/ui/input.tsx';
 import type { UseFormReturn } from 'react-hook-form';
-import type { settingsSchema } from '@/schemas/settings';
+import { settingsSchema } from '@/schemas/settings';
 import type z from 'zod';
 import { DateTimePicker } from '@/components/ui/datetime-picker';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale/ru';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
 
@@ -57,6 +64,46 @@ const CommonInfo = ({ form, handleSave, values }: CommonInfoProps) => {
                                     onChange={field.onChange}
                                     hideTime
                                 />
+                            </SettingsItem>
+                        </FormControl>
+                    </FormItem>
+                )}
+            />
+
+            <FormField
+                control={form.control}
+                name="gender"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormControl>
+                            <SettingsItem
+                                name="Гендер"
+                                value={values.gender}
+                                onSave={handleSave}
+                            >
+                                <Select
+                                    onValueChange={field.onChange}
+                                    defaultValue={field.value}
+                                >
+                                    <SelectTrigger className="w-full text-primary">
+                                        <SelectValue
+                                            className=""
+                                            placeholder="Гендер"
+                                        />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {settingsSchema.shape.gender.options.map(
+                                            (elem) => (
+                                                <SelectItem
+                                                    key={elem}
+                                                    value={elem}
+                                                >
+                                                    {elem}
+                                                </SelectItem>
+                                            ),
+                                        )}
+                                    </SelectContent>
+                                </Select>
                             </SettingsItem>
                         </FormControl>
                     </FormItem>
