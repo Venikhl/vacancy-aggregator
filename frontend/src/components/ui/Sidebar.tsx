@@ -1,15 +1,15 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { FaFileAlt, FaCog, FaSearch, FaHeart } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { File, Cog, Heart, Search } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
     const navLinks = [
-        { href: '/resume', title: 'Резюме', icon: FaFileAlt },
-        { href: '/vacancies', title: 'Поиск работы', icon: FaSearch },
-        { href: '/favorites', title: 'Избранное', icon: FaHeart },
-        { href: '/settings', title: 'Настройки', icon: FaCog },
+        { href: '/resume', title: 'Резюме', icon: File },
+        { href: '/vacancies', title: 'Поиск работы', icon: Search },
+        { href: '/favorites', title: 'Избранное', icon: Heart },
+        { href: '/settings', title: 'Настройки', icon: Cog },
     ];
 
     return (
