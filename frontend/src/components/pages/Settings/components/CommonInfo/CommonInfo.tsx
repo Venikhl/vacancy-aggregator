@@ -14,6 +14,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { ImageUpload } from './components/ImageUpload';
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
 
@@ -26,7 +27,11 @@ interface CommonInfoProps {
 const CommonInfo = ({ form, handleSave, values }: CommonInfoProps) => {
     return (
         <section>
-            <h2 className="font-semibold text-3xl pl-3">Общая Информация</h2>
+            <h2 className="font-semibold text-3xl pl-3 mb-4">
+                Общая Информация
+            </h2>
+
+            <ImageUpload />
 
             <FormField
                 control={form.control}
@@ -40,6 +45,27 @@ const CommonInfo = ({ form, handleSave, values }: CommonInfoProps) => {
                                 onSave={handleSave}
                             >
                                 <Input placeholder="Введите имя" {...field} />
+                            </SettingsItem>
+                        </FormControl>
+                    </FormItem>
+                )}
+            />
+
+            <FormField
+                control={form.control}
+                name="nickname"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormControl>
+                            <SettingsItem
+                                name="Никнейм"
+                                value={values.nickname}
+                                onSave={handleSave}
+                            >
+                                <Input
+                                    placeholder="Введите никнейм"
+                                    {...field}
+                                />
                             </SettingsItem>
                         </FormControl>
                     </FormItem>

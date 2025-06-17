@@ -67,3 +67,19 @@ export const settingsPasswordSchema = z
         path: ['passwordAgain'],
         message: 'Пароли не совпадают',
     });
+
+export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+export const settingsAvatarSchema = z.object({
+    image: z
+        .any()
+        .refine((file) => file instanceof FileList && file.length === 1, {
+            message: 'Выберите файл.',
+        })
+        .refine((file) => ACCEPTED_IMAGE_TYPES.includes(file?.[0]?.type), {
+            message: 'Допустимы только JPEG, PNG или WEBP.',
+        })
+        .refine((file) => file?.[0]?.size <= 5 * 1024 * 1024, {
+            message: 'Файл не должен превышать 5MB.',
+        }),
+});
