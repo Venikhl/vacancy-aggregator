@@ -2,9 +2,10 @@ import os
 import aiohttp
 import asyncio
 import logging
+import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from pydantic import BaseModel, Field, validator
 
@@ -85,9 +86,33 @@ class VacancyRecord:
         }
 
 
+@dataclass
+class RateLimiter:
+    """Basic rate limiter for API requests."""
+    max_requests_per_second: float = 2.0
+    _requests: List[float] = field(default_factory=list)
+
+    async def acquire(self) -> None:
+        """Acquire permission to make a request."""
+        now = time.time()
+
+        # Clean old requests
+        self._requests = [req_time for req_time in self._requests if now - req_time < 1.0]
+
+        # Check if we need to wait
+        if len(self._requests) >= self.max_requests_per_second:
+            sleep_time = 1.0 - (now - self._requests[0]) + 0.1
+            if sleep_time > 0:
+                await asyncio.sleep(sleep_time)
+                return await self.acquire()
+
+        self._requests.append(now)
+
+
 class HHAPIError(Exception):
     """Base exception for HH API errors."""
     pass
+
 
 
 class HHAuthenticationError(HHAPIError):
@@ -102,6 +127,7 @@ class HHAPIParser:
 
     def __init__(self):
         """Initialize HH API Parser with environment variables."""
+        self.rate_limiter = RateLimiter()
         self.client_id = os.getenv('HH_CLIENT_ID')
         self.client_secret = os.getenv('HH_CLIENT_SECRET')
         self.access_token = os.getenv('HH_ACCESS_TOKEN')
@@ -124,6 +150,7 @@ class HHAPIParser:
 
     async def _make_request(self, method: str, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
         """Make authenticated request to HH API."""
+        await self.rate_limiter.acquire()
         if not self.session:
             raise HHAPIError("Session not initialized")
 
