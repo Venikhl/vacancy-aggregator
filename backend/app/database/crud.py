@@ -609,6 +609,28 @@ class CRUDUser(CRUDBase):
         return (count_result.scalar_one(), result.scalars().unique().all())
 
 
+async def get_experience_category_by_name(
+    db: AsyncSession,
+    name: str
+) -> Optional[ExperienceCategory]:
+    result = await db.execute(
+        select(ExperienceCategory)
+        .where(ExperienceCategory.name == name)
+    )
+    return result.scalars().first()
+
+
+async def get_location_by_region(
+    db: AsyncSession,
+    region: str
+) -> Optional[Location]:
+    result = await db.execute(
+        select(Location)
+        .where(Location.region == region)
+    )
+    return result.scalars().first()
+
+
 # CRUD instances
 user = CRUDUser()
 vacancy = CRUDVacancy()
