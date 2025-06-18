@@ -161,10 +161,12 @@ class CRUDVacancy(CRUDBase):
             select(Vacancy)
             .options(
                 joinedload(Vacancy.company),
+                joinedload(Vacancy.source),
                 joinedload(Vacancy.location),
                 joinedload(Vacancy.specialization),
                 joinedload(Vacancy.experience_category),
-                joinedload(Vacancy.employment_types)
+                joinedload(Vacancy.employment_types),
+                joinedload(Vacancy.salary_type)
             )
             .where(Vacancy.vacancy_id == vacancy_id)
         )
@@ -257,6 +259,34 @@ class CRUDResume(CRUDBase):
     def __init__(self):
         """Initialize CRUDResume."""
         super().__init__(Resume)
+
+    async def get_with_relations(
+        self,
+        db: AsyncSession,
+        resume_id: int
+    ) -> Optional[Vacancy]:
+        """
+        Get a resume along with its related data.
+
+        Args:
+            db (AsyncSession): Async database session.
+            resume_id (int): ID of the resume.
+
+        Returns:
+            Optional[Resume]: Resume object with related fields loaded.
+        """
+        result = await db.execute(
+            select(Resume)
+            .options(
+                joinedload(Resume.source),
+                joinedload(Resume.salary_type),
+                joinedload(Resume.location),
+                joinedload(Resume.experience_category),
+                joinedload(Resume.specialization)
+            )
+            .where(Resume.resume_id == resume_id)
+        )
+        return result.scalars().first()
 
     async def search(
         self,
