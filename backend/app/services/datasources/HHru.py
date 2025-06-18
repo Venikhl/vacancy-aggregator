@@ -3,6 +3,7 @@ import aiohttp
 import asyncio
 import logging
 import time
+import backoff
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
@@ -114,6 +115,10 @@ class HHAPIError(Exception):
     pass
 
 
+class HHRateLimitError(HHAPIError):
+    """Exception raised when rate limit is exceeded."""
+    pass
+
 
 class HHAuthenticationError(HHAPIError):
     """Exception raised for authentication errors."""
@@ -148,9 +153,17 @@ class HHAPIParser:
         if self.session:
             await self.session.close()
 
+    @backoff.on_exception(
+        backoff.expo,
+        (aiohttp.ClientError, HHRateLimitError),
+        max_tries=5,
+        factor=2,
+        max_time=300
+    )
     async def _make_request(self, method: str, endpoint: str, params: Optional[Dict] = None) -> Dict[str, Any]:
-        """Make authenticated request to HH API."""
+        """Make authenticated request with retry logic."""
         await self.rate_limiter.acquire()
+
         if not self.session:
             raise HHAPIError("Session not initialized")
 
@@ -159,13 +172,26 @@ class HHAPIParser:
         if self.access_token:
             headers['Authorization'] = f'Bearer {self.access_token}'
 
-        async with self.session.request(method, url, params=params, headers=headers) as response:
-            if response.status == 401:
-                raise HHAuthenticationError("Authentication failed")
-            if response.status >= 400:
-                raise HHAPIError(f"API request failed: {response.status}")
+        try:
+            async with self.session.request(method, url, params=params, headers=headers) as response:
+                if response.status == 429:
+                    self.logger.warning("Rate limit exceeded (429)")
+                    raise HHRateLimitError("Rate limit exceeded")
 
-            return await response.json()
+                if response.status == 401:
+                    raise HHAuthenticationError("Authentication failed")
+
+                if response.status >= 400:
+                    raise HHAPIError(f"API request failed: {response.status}")
+
+                return await response.json()
+
+        except asyncio.TimeoutError:
+            self.logger.error("Request timeout")
+            raise
+        except aiohttp.ClientError as e:
+            self.logger.error(f"Network error: {e}")
+            raise
 
     async def _search_vacancies_page(self, filters: VacancyFilters, page: int = 0) -> Dict[str, Any]:
         """Search vacancies for a specific page."""
