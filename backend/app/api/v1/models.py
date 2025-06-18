@@ -1,6 +1,6 @@
 """API models."""
 
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 
 
@@ -219,3 +219,11 @@ class Resume(BaseModel):
     email: str | None = None
     phone_number: str | None = None
     published_at: TimeStamp | None = None
+
+
+class ErrorResponse(BaseModel):
+    """Error response."""
+
+    detail: str
+    code: Optional[int] = None
+    error_type: Optional[str] = None
