@@ -350,6 +350,23 @@ class CRUDUser(CRUDBase):
         )
         return result.scalars().first()
 
+    async def get_by_id(
+            self, db: AsyncSession, id: int) -> Optional[User]:
+        """
+        Get a user by ID.
+
+        Args:
+            db (AsyncSession): Async database session.
+            id (int): User ID.
+
+        Returns:
+            Optional[User]: User object if found.
+        """
+        result = await db.execute(
+            select(User).where(User.user_id == id)
+        )
+        return result.scalars().first()
+
     async def add_favorite_vacancy(
         self,
         db: AsyncSession,
