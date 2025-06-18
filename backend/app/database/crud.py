@@ -1,7 +1,7 @@
 """CRUD operations."""
 
-from typing import List, Optional, Type, TypeVar
-from sqlalchemy import select, and_, or_
+from typing import List, Optional, Tuple, Type, TypeVar
+from sqlalchemy import select, and_, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from datetime import datetime
@@ -429,7 +429,7 @@ class CRUDUser(CRUDBase):
         user_id: int,
         skip: int = 0,
         limit: int = 100
-    ) -> List[Vacancy]:
+    ) -> Tuple[int, List[Vacancy]]:
         """
         Retrieve user's favorite vacancies.
 
@@ -440,11 +440,12 @@ class CRUDUser(CRUDBase):
             limit (int): Max number of results.
 
         Returns:
-            List[Vacancy]: List of favorite vacancies.
+            (int, List[Vacancy]): Total count and paginated list
+            of favorite vacancies.
         """
         user = await self.get(db, id=user_id)
         if not user:
-            return []
+            return (0, [])
 
         result = await db.execute(
             select(Vacancy)
@@ -453,7 +454,13 @@ class CRUDUser(CRUDBase):
             .offset(skip)
             .limit(limit)
         )
-        return result.scalars().all()
+        count_result = await db.execute(
+            select(func.count())
+            .select_from(user_favorite_vacancies)
+            .where(user_favorite_vacancies.c.user_id == user_id)
+        )
+
+        return (count_result.scalar_one(), result.scalars().all())
 
     async def add_favorite_resume(
         self,
@@ -517,7 +524,7 @@ class CRUDUser(CRUDBase):
         user_id: int,
         skip: int = 0,
         limit: int = 100
-    ) -> List[Resume]:
+    ) -> Tuple[int, List[Resume]]:
         """
         Retrieve user's favorite resumes with related data.
 
@@ -528,11 +535,12 @@ class CRUDUser(CRUDBase):
             limit (int): Pagination limit.
 
         Returns:
-            List[Resume]: List of favorite resumes.
+            List[Resume]: Total count and paginated list
+            of favorite resumes.
         """
         user = await self.get(db, id=user_id)
         if not user:
-            return []
+            return (0, [])
 
         result = await db.execute(
             select(Resume)
@@ -546,7 +554,12 @@ class CRUDUser(CRUDBase):
             .offset(skip)
             .limit(limit)
         )
-        return result.scalars().unique().all()
+        count_result = await db.execute(
+            select(func.count())
+            .select_from(user_favorite_resumes)
+            .where(user_favorite_resumes.c.user_id == user_id)
+        )
+        return (count_result.scalar_one(), result.scalars().unique().all())
 
 
 # CRUD instances
