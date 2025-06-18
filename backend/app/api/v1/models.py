@@ -222,6 +222,8 @@ class Resume(BaseModel):
 
 
 class ErrorResponse(BaseModel):
+    """Error response."""
+
     detail: str
     code: Optional[int] = None
     error_type: Optional[str] = None
