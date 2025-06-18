@@ -158,10 +158,10 @@ class TimeStamp(BaseModel):
 class VacancyFilter(BaseModel):
     """Vacancy filter."""
 
-    salary_min: int
-    salary_max: int
+    salary_min: int | None
+    salary_max: int | None
     experience_categories: List[ExperienceCategory]
-    location: Location
+    location: Location | None
     sources: List[Source]
 
 
@@ -195,12 +195,12 @@ class ResumeFilter(BaseModel):
     """Resume filter."""
 
     keywords: List[str]
-    location: Location
-    salary_min: int
-    salary_max: int
+    location: Location | None
+    salary_min: int | None
+    salary_max: int | None
     experience_categories: List[ExperienceCategory]
     skills: List[str]
-    education: str
+    education: str | None
 
 
 class ResumesView(BaseModel):
