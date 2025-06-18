@@ -14,6 +14,7 @@ from sqlalchemy.orm import relationship, DeclarativeBase
 
 class Base(DeclarativeBase):
     """Base model."""
+
     pass
 
 
