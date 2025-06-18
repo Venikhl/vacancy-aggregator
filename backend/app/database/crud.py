@@ -168,7 +168,7 @@ class CRUDVacancy(CRUDBase):
                 joinedload(Vacancy.employment_types),
                 joinedload(Vacancy.salary_type)
             )
-            .where(Vacancy.vacancy_id == vacancy_id)
+            .where(Vacancy.id == vacancy_id)
         )
         return result.scalars().first()
 
@@ -292,7 +292,7 @@ class CRUDResume(CRUDBase):
                 joinedload(Resume.experience_category),
                 joinedload(Resume.specialization)
             )
-            .where(Resume.resume_id == resume_id)
+            .where(Resume.id == resume_id)
         )
         return result.scalars().first()
 
@@ -410,7 +410,7 @@ class CRUDUser(CRUDBase):
             Optional[User]: User object if found.
         """
         result = await db.execute(
-            select(User).where(User.user_id == id)
+            select(User).where(User.id == id)
         )
         return result.scalars().first()
 
@@ -433,7 +433,7 @@ class CRUDUser(CRUDBase):
         """
         user = await self.get(db, id=user_id)
         if user:
-            stmt = select(Vacancy).where(Vacancy.vacancy_id == vacancy_id)
+            stmt = select(Vacancy).where(Vacancy.id == vacancy_id)
             result = await db.execute(stmt)
             vacancy = result.scalars().first()
             if vacancy:
@@ -461,7 +461,7 @@ class CRUDUser(CRUDBase):
         """
         user = await self.get(db, id=user_id)
         if user:
-            stmt = select(Vacancy).where(Vacancy.vacancy_id == vacancy_id)
+            stmt = select(Vacancy).where(Vacancy.id == vacancy_id)
             result = await db.execute(stmt)
             vacancy = result.scalars().first()
             if vacancy and vacancy in user.favorite_vacancies:
@@ -528,7 +528,7 @@ class CRUDUser(CRUDBase):
         """
         user = await self.get(db, id=user_id)
         if user:
-            stmt = select(Resume).where(Resume.resume_id == resume_id)
+            stmt = select(Resume).where(Resume.id == resume_id)
             result = await db.execute(stmt)
             resume = result.scalars().first()
             if resume:
@@ -556,7 +556,7 @@ class CRUDUser(CRUDBase):
         """
         user = await self.get(db, id=user_id)
         if user:
-            stmt = select(Resume).where(Resume.resume_id == resume_id)
+            stmt = select(Resume).where(Resume.id == resume_id)
             result = await db.execute(stmt)
             resume = result.scalars().first()
             if resume and resume in user.favorite_resumes:
