@@ -3,7 +3,6 @@
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from app.core.config import get_settings
-from typing import Dict, Any
 
 
 ALGORITHM = "HS256"
