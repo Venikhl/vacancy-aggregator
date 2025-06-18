@@ -43,32 +43,6 @@ class View(BaseModel):
     count: int
 
 
-class VacancyFilter(BaseModel):
-    """Vacancy filter."""
-
-    pass
-
-
-class VacanciesView(BaseModel):
-    """Vacancy filter, offset, and count."""
-
-    filter: VacancyFilter
-    view: View
-
-
-class ResumeFilter(BaseModel):
-    """Resume filter."""
-
-    pass
-
-
-class ResumesView(BaseModel):
-    """Resume filter, offset, and count."""
-
-    filter: ResumeFilter
-    view: View
-
-
 class Tokens(BaseModel):
     """Access and refresh token pair."""
 
@@ -181,6 +155,23 @@ class TimeStamp(BaseModel):
     time_stamp: str
 
 
+class VacancyFilter(BaseModel):
+    """Vacancy filter."""
+
+    salary_min: int
+    salary_max: int
+    experience_categories: List[ExperienceCategory]
+    location: Location
+    sources: List[Source]
+
+
+class VacanciesView(BaseModel):
+    """Vacancy filter, offset, and count."""
+
+    filter: VacancyFilter
+    view: View
+
+
 class Vacancy(BaseModel):
     """Complete representation of vacancy."""
 
@@ -198,6 +189,25 @@ class Vacancy(BaseModel):
     published_at: TimeStamp | None = None
     contacts: str | None = None
     url: str | None = None
+
+
+class ResumeFilter(BaseModel):
+    """Resume filter."""
+
+    keywords: List[str]
+    location: Location
+    salary_min: int
+    salary_max: int
+    experience_categories: List[ExperienceCategory]
+    skills: List[str]
+    education: str
+
+
+class ResumesView(BaseModel):
+    """Resume filter, offset, and count."""
+
+    filter: ResumeFilter
+    view: View
 
 
 class Resume(BaseModel):
