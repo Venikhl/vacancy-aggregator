@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from '@/components/ui/button';
 
 type VacancyCardProps = {
   title: string;
@@ -8,25 +9,58 @@ type VacancyCardProps = {
   timeAgo?: string;
 };
 
-export const VacancyCard: React.FC<VacancyCardProps> = ({ title, company, location, salary, timeAgo }) => {
+export const VacancyCard: React.FC<VacancyCardProps> = ({
+  title,
+  company,
+  location,
+  salary,
+  timeAgo,
+}) => {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-2 shadow-sm hover:shadow-md transition">
-      <div className="flex items-center justify-between text-sm text-gray-400">
+    <div
+      className="p-5 flex flex-col gap-2 rounded-[var(--radius-xl)] shadow-sm hover:shadow-md transition"
+      style={{
+        backgroundColor: 'var(--color-card)',
+        color: 'var(--color-card-foreground)',
+        border: '1px solid var(--color-border)',
+      }}
+    >
+      <div
+        className="flex items-center justify-between text-sm"
+        style={{ color: 'var(--muted-foreground)' }}
+      >
         <span>{timeAgo || 'Parsed recently'}</span>
       </div>
+
       <div className="flex items-center gap-2">
-        <span className="bg-[#1e1e1e] text-white text-xs font-semibold px-3 py-1 rounded-full">🔶 {company}</span>
+        <span
+          className="text-xs font-semibold px-3 py-1 rounded-full"
+          style={{
+            backgroundColor: 'var(--color-primary)',
+            color: 'var(--color-on-primary)',
+          }}
+        >
+          🔶 {company}
+        </span>
       </div>
-      <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-      <p className="text-gray-600">{location}</p>
-      {salary && <p className="text-green-600 font-medium">{salary}</p>}
+
+      <h2 className="text-xl font-semibold">{title}</h2>
+
+      <p style={{ color: 'var(--color-secondary)' }}>{location}</p>
+
+      {salary && (
+        <p style={{ color: 'oklch(0.45 0.2 150)' }} className="font-medium">
+          {salary}
+        </p>
+      )}
+
       <div className="flex justify-end gap-2 mt-3">
-        <button className="border border-[#1e1e1e] text-[#1e1e1e] px-4 py-1 rounded-md hover:bg-gray-100">
+        <Button variant="outline" size="sm">
           Сохранить
-        </button>
-        <button className="bg-[#1e1e1e] text-white px-4 py-1 rounded-md hover:bg-gray-800">
+        </Button>
+        <Button variant="default" size="sm">
           Откликнуться
-        </button>
+        </Button>
       </div>
     </div>
   );
