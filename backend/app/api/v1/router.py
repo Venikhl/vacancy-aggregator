@@ -26,7 +26,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
         "description": "Validation error in registration data"
     }
 })
-def register(register: Register) -> Tokens:
+async def register(register: Register) -> Tokens:
     """Register a user."""
     return Tokens(
         access_token="access_token",  # nosec
@@ -48,7 +48,7 @@ def register(register: Register) -> Tokens:
         "description": "Validation error in login data"
     }
 })
-def login(login: Login) -> Tokens:
+async def login(login: Login) -> Tokens:
     """Login."""
     return Tokens(
         access_token="access_token",  # nosec
@@ -70,7 +70,7 @@ def login(login: Login) -> Tokens:
         "description": "Refresh token not provided or invalid format"
     }
 })
-def refresh_token(refresh_token: RefreshToken) -> AccessToken:
+async def refresh_token(refresh_token: RefreshToken) -> AccessToken:
     """Refresh expired access token."""
     return AccessToken(access_token="access_token")  # nosec
 
@@ -92,7 +92,7 @@ def refresh_token(refresh_token: RefreshToken) -> AccessToken:
         "description": "Validation error in update data"
     }
 })
-def update_me(update_me: UpdateMe, token: str = Depends(oauth2_scheme)):
+async def update_me(update_me: UpdateMe, token: str = Depends(oauth2_scheme)):
     """Update user information. Requires authentication."""
     pass
 
@@ -111,7 +111,7 @@ def update_me(update_me: UpdateMe, token: str = Depends(oauth2_scheme)):
         "description": "Access denied"
     }
 })
-def get_me(token: str = Depends(oauth2_scheme)) -> User:
+async def get_me(token: str = Depends(oauth2_scheme)) -> User:
     """Get user information. Requires authentication."""
     return User(
         first_name="John",
@@ -130,7 +130,7 @@ def get_me(token: str = Depends(oauth2_scheme)) -> User:
         "description": "Missing or invalid access token"
     }
 })
-def liked_vacancies(
+async def liked_vacancies(
         view: View,
         token: str = Depends(oauth2_scheme)
 ) -> VacancyList:
@@ -160,7 +160,7 @@ def liked_vacancies(
         "description": "Vacancy not found"
     }
 })
-def like_vacancy(id: int, token: str = Depends(oauth2_scheme)):
+async def like_vacancy(id: int, token: str = Depends(oauth2_scheme)):
     """Add a vacancy to liked. Requires authentication."""
     pass
 
@@ -178,7 +178,7 @@ def like_vacancy(id: int, token: str = Depends(oauth2_scheme)):
         "description": "Vacancy not found"
     }
 })
-def unlike_vacancy(id: int, token: str = Depends(oauth2_scheme)):
+async def unlike_vacancy(id: int, token: str = Depends(oauth2_scheme)):
     """Remove a vacancy from liked. Requires authentication."""
     pass
 
@@ -193,7 +193,7 @@ def unlike_vacancy(id: int, token: str = Depends(oauth2_scheme)):
         "description": "Missing or invalid access token"
     }
 })
-def liked_resumes(
+async def liked_resumes(
         view: View,
         token: str = Depends(oauth2_scheme)
 ) -> ResumeList:
@@ -223,7 +223,7 @@ def liked_resumes(
         "description": "Resume not found"
     }
 })
-def like_resume(id: int, token: str = Depends(oauth2_scheme)):
+async def like_resume(id: int, token: str = Depends(oauth2_scheme)):
     """Add a resume to liked. Requires authentication."""
     pass
 
@@ -241,7 +241,7 @@ def like_resume(id: int, token: str = Depends(oauth2_scheme)):
         "description": "Resume not found"
     }
 })
-def unlike_resume(id: int, token: str = Depends(oauth2_scheme)):
+async def unlike_resume(id: int, token: str = Depends(oauth2_scheme)):
     """Remove a resume from liked. Requires authentication."""
     pass
 
@@ -252,7 +252,7 @@ def unlike_resume(id: int, token: str = Depends(oauth2_scheme)):
         "description": "List of all available vacancies"
     },
 })
-def vacancies(vacancies_view: VacanciesView) -> VacancyList:
+async def vacancies(vacancies_view: VacanciesView) -> VacancyList:
     """List all available vacancies."""
     return VacancyList(
         count=0,
@@ -276,7 +276,7 @@ def vacancies(vacancies_view: VacanciesView) -> VacancyList:
         "description": "Vacancy not found"
     }
 })
-def vacancy(id: int) -> Vacancy:
+async def vacancy(id: int) -> Vacancy:
     """Get a vacancy by ID."""
     return Vacancy(
         id=id,
@@ -293,7 +293,7 @@ def vacancy(id: int) -> Vacancy:
         "description": "List of all available resumes"
     },
 })
-def resumes(resumes_view: ResumesView) -> ResumeList:
+async def resumes(resumes_view: ResumesView) -> ResumeList:
     """List all available resumes."""
     return ResumeList(
         count=0,
@@ -317,7 +317,7 @@ def resumes(resumes_view: ResumesView) -> ResumeList:
         "description": "Resume not found"
     }
 })
-def resume(id: int) -> Resume:
+async def resume(id: int) -> Resume:
     """Get a resume by ID."""
     return Resume(
         id=id,
