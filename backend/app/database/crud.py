@@ -613,6 +613,7 @@ async def get_experience_category_by_name(
     db: AsyncSession,
     name: str
 ) -> Optional[ExperienceCategory]:
+    """Get experience category by name."""
     result = await db.execute(
         select(ExperienceCategory)
         .where(ExperienceCategory.name == name)
@@ -624,6 +625,7 @@ async def get_location_by_region(
     db: AsyncSession,
     region: str
 ) -> Optional[Location]:
+    """Get location by region."""
     result = await db.execute(
         select(Location)
         .where(Location.region == region)
