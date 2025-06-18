@@ -8,7 +8,7 @@ from app.services.jwt import create_access_token, create_refresh_token, \
     verify_token
 from app.services.security import hash_password, verify_password
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from .models import AccessToken, Company, EmploymentType, \
     ExperienceCategory, Location, Login, Register, Resume, ResumeList, \
     ResumeShort, ResumesView, Salary, Source, Specialization, TimeStamp, \
@@ -20,7 +20,7 @@ from typing import Annotated, List, Optional
 
 router = APIRouter()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+bearer_scheme = HTTPBearer()
 
 SessionDep = Annotated[AsyncSession, Depends(get_async_session)]
 
@@ -147,9 +147,10 @@ async def refresh_token(
 async def update_me(
     update_me: UpdateMe,
     session: Annotated[AsyncSession, Depends(get_async_session)],
-    token: str = Depends(oauth2_scheme)
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)
 ):
     """Update user information. Requires authentication."""
+    token = credentials.credentials
     user_id = verify_token(token)
     if not user_id:
         raise HTTPException(
@@ -204,9 +205,10 @@ async def update_me(
 })
 async def get_me(
     session: Annotated[AsyncSession, Depends(get_async_session)],
-    token: str = Depends(oauth2_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)
 ) -> User:
     """Get user information. Requires authentication."""
+    token = credentials.credentials
     user_id = verify_token(token)
     if not user_id:
         raise HTTPException(
@@ -237,9 +239,10 @@ async def get_me(
 async def liked_vacancies(
     view: View,
     session: Annotated[AsyncSession, Depends(get_async_session)],
-    token: str = Depends(oauth2_scheme)
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)
 ) -> VacancyList:
     """View the list of liked vacancies. Requires authentication."""
+    token = credentials.credentials
     user_id = verify_token(token)
     if not user_id:
         raise HTTPException(
@@ -283,9 +286,10 @@ async def liked_vacancies(
 async def like_vacancy(
     id: int,
     session: Annotated[AsyncSession, Depends(get_async_session)],
-    token: str = Depends(oauth2_scheme)
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)
 ):
     """Add a vacancy to liked. Requires authentication."""
+    token = credentials.credentials
     user_id = verify_token(token)
     if not user_id:
         raise HTTPException(
@@ -314,9 +318,10 @@ async def like_vacancy(
 async def unlike_vacancy(
     id: int,
     session: Annotated[AsyncSession, Depends(get_async_session)],
-    token: str = Depends(oauth2_scheme)
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)
 ):
     """Remove a vacancy from liked. Requires authentication."""
+    token = credentials.credentials
     user_id = verify_token(token)
     if not user_id:
         raise HTTPException(
@@ -342,9 +347,10 @@ async def unlike_vacancy(
 async def liked_resumes(
     view: View,
     session: Annotated[AsyncSession, Depends(get_async_session)],
-    token: str = Depends(oauth2_scheme)
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)
 ) -> ResumeList:
     """View the list of liked resumes. Requires authentication."""
+    token = credentials.credentials
     user_id = verify_token(token)
     if not user_id:
         raise HTTPException(
@@ -388,9 +394,10 @@ async def liked_resumes(
 async def like_resume(
     id: int,
     session: Annotated[AsyncSession, Depends(get_async_session)],
-    token: str = Depends(oauth2_scheme)
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)
 ):
     """Add a resume to liked. Requires authentication."""
+    token = credentials.credentials
     user_id = verify_token(token)
     if not user_id:
         raise HTTPException(
@@ -419,9 +426,10 @@ async def like_resume(
 async def unlike_resume(
     id: int,
     session: Annotated[AsyncSession, Depends(get_async_session)],
-    token: str = Depends(oauth2_scheme)
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)
 ):
     """Remove a resume from liked. Requires authentication."""
+    token = credentials.credentials
     user_id = verify_token(token)
     if not user_id:
         raise HTTPException(
@@ -678,7 +686,7 @@ def db_timestamp_to_timestamp(
 def db_vacancy_to_vacancy(db_vacancy: dbmodels.Vacancy) -> Vacancy:
     """Convert database Vacancy model to API Vacancy model."""
     return Vacancy(
-        id=db_vacancy.vacancy_id,
+        id=db_vacancy.id,
         external_id=db_vacancy.external_id,
         source=db_source_to_source(db_vacancy.source),
         title=db_vacancy.title,
@@ -720,7 +728,7 @@ def vacancy_to_vacancy_short(vacancy: Vacancy) -> VacancyShort:
 def db_resume_to_resume(db_resume: dbmodels.Resume) -> Resume:
     """Convert database Resume model to API Resume model."""
     return Resume(
-        id=db_resume.resume_id,
+        id=db_resume.id,
         external_id=db_resume.external_id,
         source=db_source_to_source(db_resume.source),
         title=db_resume.title,
