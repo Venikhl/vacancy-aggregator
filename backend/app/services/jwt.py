@@ -12,7 +12,7 @@ def create_access_token(user_id: int) -> str:
     """Create new access token."""
     settings = get_settings()
 
-    to_encode: dict = { "sub": str(user_id) }
+    to_encode: dict = {"sub": str(user_id)}
     expire = datetime.utcnow() \
         + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
@@ -25,7 +25,7 @@ def create_refresh_token(user_id: int) -> str:
 
     expire = datetime.utcnow() \
         + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    to_encode: dict = { "sub": str(user_id) }
+    to_encode: dict = {"sub": str(user_id)}
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.JWT_KEY, algorithm=ALGORITHM)
 
