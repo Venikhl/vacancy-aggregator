@@ -181,7 +181,7 @@ class CRUDVacancy(CRUDBase):
         specialization_id: Optional[int] = None,
         min_salary: Optional[float] = None,
         max_salary: Optional[float] = None,
-        experience_category_id: Optional[int] = None,
+        experience_category_ids: Optional[List[int]] = None,
         location_id: Optional[int] = None,
         employment_type_ids: Optional[List[int]] = None,
         published_after: Optional[datetime] = None,
@@ -224,9 +224,12 @@ class CRUDVacancy(CRUDBase):
             filters.append(Vacancy.salary_value >= min_salary)
         if max_salary:
             filters.append(Vacancy.salary_value <= max_salary)
-        if experience_category_id:
-            filters.append(
-                Vacancy.experience_category_id == experience_category_id)
+        if experience_category_ids:
+            experience_category_filters = [
+                Vacancy.experience_category_id == id
+                for id in experience_category_ids
+            ]
+            filters.append(or_(*experience_category_filters))
         if location_id:
             filters.append(Vacancy.location_id == location_id)
         if published_after:
@@ -296,7 +299,7 @@ class CRUDResume(CRUDBase):
         specialization_id: Optional[int] = None,
         min_salary: Optional[float] = None,
         max_salary: Optional[float] = None,
-        experience_category_id: Optional[int] = None,
+        experience_category_ids: Optional[List[int]] = None,
         location_id: Optional[int] = None,
         skills: Optional[List[str]] = None,
         skip: int = 0,
@@ -334,9 +337,12 @@ class CRUDResume(CRUDBase):
             filters.append(Resume.salary_value >= min_salary)
         if max_salary:
             filters.append(Resume.salary_value <= max_salary)
-        if experience_category_id:
-            filters.append(
-                Resume.experience_category_id == experience_category_id)
+        if experience_category_ids:
+            experience_category_filters = [
+                Resume.experience_category_id == id
+                for id in experience_category_ids
+            ]
+            filters.append(or_(*experience_category_filters))
         if location_id:
             filters.append(Resume.location_id == location_id)
         if skills:
