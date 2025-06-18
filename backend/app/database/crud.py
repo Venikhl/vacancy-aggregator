@@ -187,7 +187,7 @@ class CRUDVacancy(CRUDBase):
         published_after: Optional[datetime] = None,
         skip: int = 0,
         limit: int = 100
-    ) -> List[Vacancy]:
+    ) -> Tuple[int, List[Vacancy]]:
         """
         Search for vacancies with various filters.
 
@@ -206,7 +206,7 @@ class CRUDVacancy(CRUDBase):
             limit (int): Pagination limit.
 
         Returns:
-            List[Vacancy]: List of matching vacancies.
+            (int, List[Vacancy]): List of matching vacancies with total count.
         """
         query = select(Vacancy).options(
             joinedload(Vacancy.company),
@@ -247,13 +247,18 @@ class CRUDVacancy(CRUDBase):
         if filters:
             query = query.where(and_(*filters))
 
+        count_query = select(func.count()).select_from(Vacancy)
+        if filters:
+            count_query = count_query.where(and_(*filters))
+
+        total = await db.execute(count_query)
         result = await db.execute(
             query
             .offset(skip)
             .limit(limit)
             .distinct()
         )
-        return result.scalars().all()
+        return (total.scalar_one(), result.scalars().all())
 
 
 class CRUDResume(CRUDBase):
@@ -304,7 +309,7 @@ class CRUDResume(CRUDBase):
         skills: Optional[List[str]] = None,
         skip: int = 0,
         limit: int = 100
-    ) -> List[Resume]:
+    ) -> Tuple[int, List[Resume]]:
         """
         Search resumes using various filters.
 
@@ -321,7 +326,7 @@ class CRUDResume(CRUDBase):
             limit (int): Pagination limit.
 
         Returns:
-            List[Resume]: Filtered list of resumes.
+            (int, List[Resume]): Filtered list of resumes with total count.
         """
         query = select(Resume).options(
             joinedload(Resume.location),
@@ -354,12 +359,18 @@ class CRUDResume(CRUDBase):
         if filters:
             query = query.where(and_(*filters))
 
+        count_query = select(func.count()).select_from(Resume)
+        if filters:
+            count_query = count_query.where(and_(*filters))
+
+        total = await db.execute(count_query)
         result = await db.execute(
             query
             .offset(skip)
             .limit(limit)
         )
-        return result.scalars().all()
+
+        return (total.scalar_one(), result.scalars().all())
 
 
 class CRUDUser(CRUDBase):
