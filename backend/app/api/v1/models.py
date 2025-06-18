@@ -163,7 +163,6 @@ class VacancyFilter(BaseModel):
     salary_max: int | None
     experience_categories: List[ExperienceCategory]
     location: Location | None
-    sources: List[Source]
 
 
 class VacanciesView(BaseModel):
