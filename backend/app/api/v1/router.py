@@ -1,14 +1,22 @@
 """API routes."""
 
-from typing import Annotated
 from app.database.database import get_async_session
-from fastapi import APIRouter, Depends
+from app.database.crud import get_experience_category_by_name, user, \
+    get_location_by_region, vacancy as dbvacancy, resume as dbresume
+import app.database.models as dbmodels
+from app.services.jwt import create_access_token, create_refresh_token, \
+    verify_token
+from app.services.security import hash_password, verify_password
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
-from .models import AccessToken, Login, Register, Resume, ResumeList, \
-    ResumeShort, ResumesView, Salary, Tokens, RefreshToken, \
-    UpdateMe, User, Vacancy, VacancyList, VacancyShort, \
-    VacanciesView, View, ErrorResponse
+from .models import AccessToken, Company, EmploymentType, \
+    ExperienceCategory, Location, Login, Register, Resume, ResumeList, \
+    ResumeShort, ResumesView, Salary, Source, Specialization, TimeStamp, \
+    Tokens, RefreshToken, UpdateMe, User, Vacancy, VacancyList, \
+    VacancyShort, VacanciesView, View, ErrorResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Annotated, List, Optional
+
 
 router = APIRouter()
 
@@ -36,10 +44,22 @@ async def register(
     session: Annotated[AsyncSession, Depends(get_async_session)]
 ) -> Tokens:
     """Register a user."""
-    return Tokens(
-        access_token="access_token",  # nosec
-        refresh_token="refresh_token"
-    )
+    existing_user = await user.get_by_email(session, register.email)
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email is already taken")
+
+    hashed_password = hash_password(register.password)
+    db_user = await user.create(session, {
+        "first_name": register.first_name,
+        "last_name": register.last_name,
+        "email": register.email,
+        "hashed_password": hashed_password,
+    })
+
+    access_token = create_access_token(db_user.id)
+    refresh_token = create_refresh_token(db_user.id)
+
+    return Tokens(access_token=access_token, refresh_token=refresh_token)
 
 
 @router.post("/login", responses={
@@ -61,10 +81,20 @@ async def login(
     session: Annotated[AsyncSession, Depends(get_async_session)]
 ) -> Tokens:
     """Login."""
-    return Tokens(
-        access_token="access_token",  # nosec
-        refresh_token="refresh_token"
-    )
+    db_user = await user.get_by_email(session, email=login.email)
+    if not db_user or not verify_password(
+        login.password,
+        db_user.hashed_password
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect email or password"
+        )
+
+    access_token = create_access_token(db_user.id)
+    refresh_token = create_refresh_token(db_user.id)
+
+    return Tokens(access_token=access_token, refresh_token=refresh_token)
 
 
 @router.post("/refresh_token", responses={
@@ -86,7 +116,15 @@ async def refresh_token(
     session: Annotated[AsyncSession, Depends(get_async_session)]
 ) -> AccessToken:
     """Refresh expired access token."""
-    return AccessToken(access_token="access_token")  # nosec
+    user_id = verify_token(refresh_token.refresh_token)
+    if not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Refresh token expired or invalid"
+        )
+
+    access_token = create_access_token(user_id)
+    return AccessToken(access_token=access_token)
 
 
 @router.post("/update_me", responses={
@@ -112,7 +150,42 @@ async def update_me(
     token: str = Depends(oauth2_scheme)
 ):
     """Update user information. Requires authentication."""
-    pass
+    user_id = verify_token(token)
+    if not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Access token expired or invalid"
+        )
+    db_user = await user.get_by_id(session, id=user_id)
+    if not db_user:
+        raise HTTPException(status_code=403, detail="Access denied")
+    if update_me.first_name:
+        db_user.first_name = update_me.first_name
+    if update_me.last_name:
+        db_user.last_name = update_me.last_name
+    if update_me.email:
+        db_user.email = update_me.email
+    if update_me.current_password or update_me.new_password:
+        if not update_me.current_password:
+            raise HTTPException(
+                status_code=422,
+                detail="Current password is empty"
+            )
+        if not update_me.new_password:
+            raise HTTPException(
+                status_code=422,
+                detail="New password is empty"
+            )
+        if not verify_password(
+            update_me.current_password,
+            db_user.hashed_password
+        ):
+            raise HTTPException(
+                status_code=422,
+                detail="Current password is incorrect"
+            )
+        hashed_password = hash_password(update_me.current_password)
+        db_user.hashed_password = hashed_password
 
 
 @router.post("/get_me", responses={
@@ -134,10 +207,20 @@ async def get_me(
     token: str = Depends(oauth2_scheme),
 ) -> User:
     """Get user information. Requires authentication."""
+    user_id = verify_token(token)
+    if not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Access token expired or invalid"
+        )
+    db_user = await user.get_by_id(session, user_id)
+    if not db_user:
+        raise HTTPException(status_code=403, detail="Access denied")
+
     return User(
-        first_name="John",
-        last_name="Doe",
-        email="john_doe@example.com"
+        first_name=db_user.first_name,
+        last_name=db_user.last_name,
+        email=db_user.email
     )
 
 
@@ -157,15 +240,30 @@ async def liked_vacancies(
     token: str = Depends(oauth2_scheme)
 ) -> VacancyList:
     """View the list of liked vacancies. Requires authentication."""
+    user_id = verify_token(token)
+    if not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Access token expired or invalid"
+        )
+    (count, vacancies) = await user.get_favorite_vacancies(
+        session,
+        user_id,
+        view.offset,
+        view.count
+    )
+    short_vacancies = []
+    for v in vacancies:
+        v_rel = await dbvacancy.get_with_relations(session, v.vacancy_id)
+        if not v_rel:
+            continue
+        vacancy = db_vacancy_to_vacancy(v_rel)
+        short_vacancy = vacancy_to_vacancy_short(vacancy)
+        short_vacancies.append(short_vacancy)
+
     return VacancyList(
-        count=0,
-        vacancies=[
-            VacancyShort(
-                id=0,
-                title="Programmer",
-                salary=Salary(type="monthly")
-            )
-        ]
+        count=count,
+        vacancies=short_vacancies
     )
 
 
@@ -188,7 +286,16 @@ async def like_vacancy(
     token: str = Depends(oauth2_scheme)
 ):
     """Add a vacancy to liked. Requires authentication."""
-    pass
+    user_id = verify_token(token)
+    if not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Access token expired or invalid"
+        )
+    db_vacancy = await dbvacancy.get_with_relations(session, id)
+    if not db_vacancy:
+        raise HTTPException(status_code=404, detail="Vacancy not found")
+    await user.add_favorite_vacancy(session, user_id, db_vacancy.vacancy_id)
 
 
 @router.get("/unlike_vacancy/{id}", responses={
@@ -210,7 +317,16 @@ async def unlike_vacancy(
     token: str = Depends(oauth2_scheme)
 ):
     """Remove a vacancy from liked. Requires authentication."""
-    pass
+    user_id = verify_token(token)
+    if not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Access token expired or invalid"
+        )
+    db_vacancy = await dbvacancy.get_with_relations(session, id)
+    if not db_vacancy:
+        raise HTTPException(status_code=404, detail="Vacancy not found")
+    await user.remove_favorite_vacancy(session, user_id, db_vacancy.vacancy_id)
 
 
 @router.post("/liked_resumes", responses={
@@ -229,15 +345,30 @@ async def liked_resumes(
     token: str = Depends(oauth2_scheme)
 ) -> ResumeList:
     """View the list of liked resumes. Requires authentication."""
+    user_id = verify_token(token)
+    if not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Access token expired or invalid"
+        )
+    (count, resumes) = await user.get_favorite_resumes(
+        session,
+        user_id,
+        view.offset,
+        view.count
+    )
+    short_resumes = []
+    for r in resumes:
+        r_rel = await dbresume.get_with_relations(session, r.resume_id)
+        if not r_rel:
+            continue
+        resume = db_vacancy_to_vacancy(r_rel)
+        short_resume = vacancy_to_vacancy_short(resume)
+        short_resumes.append(short_resume)
+
     return ResumeList(
-        count=0,
-        resumes=[
-            ResumeShort(
-                id=0,
-                title="Programmer",
-                salary=Salary(type="monthly")
-            )
-        ]
+        count=count,
+        vacancies=short_resumes
     )
 
 
@@ -260,7 +391,16 @@ async def like_resume(
     token: str = Depends(oauth2_scheme)
 ):
     """Add a resume to liked. Requires authentication."""
-    pass
+    user_id = verify_token(token)
+    if not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Access token expired or invalid"
+        )
+    db_resume = await dbresume.get_with_relations(session, id)
+    if not db_resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    await user.add_favorite_vacancy(session, user_id, db_resume.resume_id)
 
 
 @router.get("/unlike_resume/{id}", responses={
@@ -282,7 +422,16 @@ async def unlike_resume(
     token: str = Depends(oauth2_scheme)
 ):
     """Remove a resume from liked. Requires authentication."""
-    pass
+    user_id = verify_token(token)
+    if not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Access token expired or invalid"
+        )
+    db_resume = await dbresume.get_with_relations(session, id)
+    if not db_resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    await user.remove_favorite_vacancy(session, user_id, db_resume.resume_id)
 
 
 @router.post("/vacancies", responses={
@@ -296,15 +445,56 @@ async def vacancies(
     session: Annotated[AsyncSession, Depends(get_async_session)]
 ) -> VacancyList:
     """List all available vacancies."""
-    return VacancyList(
-        count=0,
-        vacancies=[
-            VacancyShort(
-                id=0,
-                title="Programmer",
-                salary=Salary(type="monthly")
+    filter = vacancies_view.filter
+    experience_category_ids: Optional[List[int]] = None
+    if not filter.experience_categories:
+        experience_category_ids = None
+    else:
+        experience_category_ids = []
+        for experience_category in filter.experience_categories:
+            db_experience_category = \
+                await get_experience_category_by_name(
+                    session,
+                    experience_category.name
+                )
+            if not db_experience_category:
+                continue
+            experience_category_ids.append(db_experience_category.category_id)
+    location_id: Optional[int] = None
+    if filter.location:
+        db_location = await get_location_by_region(
+            session,
+            filter.location.region
+        )
+        if db_location:
+            location_id = db_location.location_id
+    db_vacancies = await dbvacancy.search(
+        session,
+        title=filter.title,
+        min_salary=filter.salary_min,
+        max_salary=filter.salary_max,
+        experience_category_ids=experience_category_ids,
+        location_id=location_id
+    )
+    vacancies = []
+    vacancy_count = 0
+    if db_vacancies:
+        (count, db_vacancy_list) = db_vacancies
+        vacancy_count = count
+        for db_vacancy in db_vacancy_list:
+            v_rel = await dbvacancy.get_with_relations(
+                session,
+                db_vacancy.resume_id
             )
-        ]
+            if not v_rel:
+                continue
+            vacancy = db_vacancy_to_vacancy(v_rel)
+            vacancy_short = vacancy_to_vacancy_short(vacancy)
+            vacancies.append(vacancy_short)
+
+    return VacancyList(
+        count=vacancy_count,
+        vacancies=vacancies
     )
 
 
@@ -323,13 +513,10 @@ async def vacancy(
     session: Annotated[AsyncSession, Depends(get_async_session)]
 ) -> Vacancy:
     """Get a vacancy by ID."""
-    return Vacancy(
-        id=id,
-        external_id="0",
-        title="Programmer",
-        salary=Salary(type="monthly"),
-        employment_types=[]
-    )
+    db_vacancy = await dbvacancy.get(session, id)
+    if not db_vacancy:
+        raise HTTPException(status_code=404, detail="Vacancy not found")
+    return db_vacancy_to_vacancy(db_vacancy)
 
 
 @router.post("/resumes", responses={
@@ -343,15 +530,57 @@ async def resumes(
     session: Annotated[AsyncSession, Depends(get_async_session)]
 ) -> ResumeList:
     """List all available resumes."""
-    return ResumeList(
-        count=0,
-        resumes=[
-            ResumeShort(
-                id=0,
-                title="Programmer",
-                salary=Salary(type="monthly")
+    filter = resumes_view.filter
+    experience_category_ids: Optional[List[int]] = None
+    if not filter.experience_categories:
+        experience_category_ids = None
+    else:
+        experience_category_ids = []
+        for experience_category in filter.experience_categories:
+            db_experience_category = \
+                await get_experience_category_by_name(
+                    session,
+                    experience_category.name
+                )
+            if not db_experience_category:
+                continue
+            experience_category_ids.append(db_experience_category.category_id)
+    location_id: Optional[int] = None
+    if filter.location:
+        db_location = await get_location_by_region(
+            session,
+            filter.location.region
+        )
+        if db_location:
+            location_id = db_location.location_id
+    db_resumes = await dbresume.search(
+        session,
+        title=filter.title,
+        location_id=location_id,
+        min_salary=filter.salary_min,
+        max_salary=filter.salary_max,
+        experience_category_ids=experience_category_ids,
+        skills=filter.skills
+    )
+    resumes = []
+    resume_count = 0
+    if db_resumes:
+        (count, db_resume_list) = db_resumes
+        resume_count = count
+        for db_resume in db_resume_list:
+            r_rel = await dbresume.get_with_relations(
+                session,
+                db_resume.resume_id
             )
-        ]
+            if not r_rel:
+                continue
+            resume = db_resume_to_resume(r_rel)
+            resume_short = resume_to_resume_short(resume)
+            resumes.append(resume_short)
+
+    return ResumeList(
+        count=resume_count,
+        resumes=resumes
     )
 
 
@@ -370,9 +599,165 @@ async def resume(
     session: Annotated[AsyncSession, Depends(get_async_session)]
 ) -> Resume:
     """Get a resume by ID."""
+    db_resume = await dbresume.get(session, id)
+    if not db_resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    return db_resume_to_resume(db_resume)
+
+
+def db_source_to_source(db_source: dbmodels.Source) -> Source:
+    """Convert database Source model to API Source model."""
+    return Source(
+        name=db_source.name
+    )
+
+
+def db_company_to_company(db_company: dbmodels.Company) -> Company:
+    """Convert database Company model to API Company model."""
+    return Company(
+        name=db_company.name
+    )
+
+
+def db_experience_category_to_experience_category(
+    db_experience_category: dbmodels.ExperienceCategory
+) -> ExperienceCategory:
+    """Convert database ExperienceCategory model to API \
+    ExperienceCategory model."""
+    return ExperienceCategory(
+        name=db_experience_category.name
+    )
+
+
+def db_location_to_location(
+    db_location: dbmodels.Location
+) -> Location:
+    """Convert database Location model to API Location model."""
+    return Location(
+        region=db_location.region
+    )
+
+
+def db_specialization_to_specialization(
+    db_specialization: dbmodels.Specialization
+) -> Specialization:
+    """Convert database Specialization model to API Specialization model."""
+    return Specialization(
+        specialization=db_specialization.specialization
+    )
+
+
+def db_employment_type_to_employment_type(
+    db_empolyment_type: dbmodels.EmploymentType
+) -> EmploymentType:
+    """Convert database EmploymentType model to API \
+    EmploymentType model."""
+    return EmploymentType(
+        name=db_empolyment_type.name
+    )
+
+
+def db_employment_types_to_employment_type_list(
+    db_employment_types
+) -> List[EmploymentType]:
+    """Convert database EmploymentType list to API \
+    EmploymentType list."""
+    return [db_employment_type_to_employment_type(x)
+            for x in db_employment_types]
+
+
+def db_timestamp_to_timestamp(
+    db_timestamp
+) -> TimeStamp:
+    """Convert database TimeStamp model to API TimeStamp model."""
+    return TimeStamp(
+        time_stamp=str(db_timestamp)
+    )
+
+
+def db_vacancy_to_vacancy(db_vacancy: dbmodels.Vacancy) -> Vacancy:
+    """Convert database Vacancy model to API Vacancy model."""
+    return Vacancy(
+        id=db_vacancy.vacancy_id,
+        external_id=db_vacancy.external_id,
+        source=db_source_to_source(db_vacancy.source),
+        title=db_vacancy.title,
+        description=db_vacancy.description,
+        company=db_company_to_company(db_vacancy.company),
+        salary=Salary(
+            type=db_vacancy.salary_type.name,
+            currency=db_vacancy.salary_currency,
+            value=db_vacancy.salary_value
+        ),
+        experience_category=db_experience_category_to_experience_category(
+            db_vacancy.experience_category
+        ),
+        location=db_location_to_location(db_vacancy.location),
+        specialization=db_specialization_to_specialization(
+            db_vacancy.specialization
+        ),
+        employment_types=db_employment_types_to_employment_type_list(
+            db_vacancy.employment_types
+        ),
+        published_at=db_timestamp_to_timestamp(
+            db_vacancy.published_at
+        ),
+        contacts=db_vacancy.contacts,
+        url=db_vacancy.url
+    )
+
+
+def vacancy_to_vacancy_short(vacancy: Vacancy) -> VacancyShort:
+    """Convert Vacancy to short representation."""
+    return VacancyShort(
+        id=vacancy.id,
+        title=vacancy.title,
+        description=vacancy.description,
+        salary=vacancy.salary
+    )
+
+
+def db_resume_to_resume(db_resume: dbmodels.Resume) -> Resume:
+    """Convert database Resume model to API Resume model."""
     return Resume(
-        id=id,
-        external_id="0",
-        title="Programmer",
-        salary=Salary(type="monthly")
+        id=db_resume.resume_id,
+        external_id=db_resume.external_id,
+        source=db_source_to_source(db_resume.source),
+        title=db_resume.title,
+        salary=Salary(
+            type=db_resume.salary_type.name,
+            currency=db_resume.salary_currency,
+            value=db_resume.salary_value
+        ),
+        description=db_resume.description,
+        location=db_location_to_location(db_resume.location),
+        experience_category=db_experience_category_to_experience_category(
+            db_resume.experience_category
+        ),
+        skills=db_resume.skills_text,
+        education=db_resume.education,
+        specialization=db_specialization_to_specialization(
+            db_resume.specialization
+        ),
+        first_name=db_resume.first_name,
+        last_name=db_resume.last_name,
+        middle_name=db_resume.middle_name,
+        email=db_resume.email,
+        phone_number=db_resume.phone_number,
+        published_at=db_timestamp_to_timestamp(
+            db_resume.published_at
+        )
+    )
+
+
+def resume_to_resume_short(resume: Resume) -> ResumeShort:
+    """Convert Resume to short representation."""
+    return ResumeShort(
+        id=resume.id,
+        title=resume.title,
+        salary=resume.salary,
+        description=resume.description,
+        first_name=resume.first_name,
+        last_name=resume.last_name,
+        middle_name=resume.middle_name
     )
