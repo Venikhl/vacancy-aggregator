@@ -368,7 +368,7 @@ async def liked_resumes(
 
     return ResumeList(
         count=count,
-        vacancies=short_resumes
+        resumes=short_resumes
     )
 
 
