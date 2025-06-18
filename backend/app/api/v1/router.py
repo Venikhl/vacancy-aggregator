@@ -1,15 +1,20 @@
 """API routes."""
 
+from typing import Annotated
+from app.database.database import get_async_session
 from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordBearer
 from .models import AccessToken, Login, Register, Resume, ResumeList, \
     ResumeShort, ResumesView, Salary, Tokens, RefreshToken, \
     UpdateMe, User, Vacancy, VacancyList, VacancyShort, \
     VacanciesView, View, ErrorResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+SessionDep = Annotated[AsyncSession, Depends(get_async_session)]
 
 
 @router.post("/register", responses={
@@ -26,7 +31,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
         "description": "Validation error in registration data"
     }
 })
-async def register(register: Register) -> Tokens:
+async def register(
+    register: Register,
+    session: Annotated[AsyncSession, Depends(get_async_session)]
+) -> Tokens:
     """Register a user."""
     return Tokens(
         access_token="access_token",  # nosec
@@ -48,7 +56,10 @@ async def register(register: Register) -> Tokens:
         "description": "Validation error in login data"
     }
 })
-async def login(login: Login) -> Tokens:
+async def login(
+    login: Login,
+    session: Annotated[AsyncSession, Depends(get_async_session)]
+) -> Tokens:
     """Login."""
     return Tokens(
         access_token="access_token",  # nosec
@@ -70,7 +81,10 @@ async def login(login: Login) -> Tokens:
         "description": "Refresh token not provided or invalid format"
     }
 })
-async def refresh_token(refresh_token: RefreshToken) -> AccessToken:
+async def refresh_token(
+    refresh_token: RefreshToken,
+    session: Annotated[AsyncSession, Depends(get_async_session)]
+) -> AccessToken:
     """Refresh expired access token."""
     return AccessToken(access_token="access_token")  # nosec
 
@@ -92,7 +106,11 @@ async def refresh_token(refresh_token: RefreshToken) -> AccessToken:
         "description": "Validation error in update data"
     }
 })
-async def update_me(update_me: UpdateMe, token: str = Depends(oauth2_scheme)):
+async def update_me(
+    update_me: UpdateMe,
+    session: Annotated[AsyncSession, Depends(get_async_session)],
+    token: str = Depends(oauth2_scheme)
+):
     """Update user information. Requires authentication."""
     pass
 
@@ -111,7 +129,10 @@ async def update_me(update_me: UpdateMe, token: str = Depends(oauth2_scheme)):
         "description": "Access denied"
     }
 })
-async def get_me(token: str = Depends(oauth2_scheme)) -> User:
+async def get_me(
+    session: Annotated[AsyncSession, Depends(get_async_session)],
+    token: str = Depends(oauth2_scheme),
+) -> User:
     """Get user information. Requires authentication."""
     return User(
         first_name="John",
@@ -131,8 +152,9 @@ async def get_me(token: str = Depends(oauth2_scheme)) -> User:
     }
 })
 async def liked_vacancies(
-        view: View,
-        token: str = Depends(oauth2_scheme)
+    view: View,
+    session: Annotated[AsyncSession, Depends(get_async_session)],
+    token: str = Depends(oauth2_scheme)
 ) -> VacancyList:
     """View the list of liked vacancies. Requires authentication."""
     return VacancyList(
@@ -160,7 +182,11 @@ async def liked_vacancies(
         "description": "Vacancy not found"
     }
 })
-async def like_vacancy(id: int, token: str = Depends(oauth2_scheme)):
+async def like_vacancy(
+    id: int,
+    session: Annotated[AsyncSession, Depends(get_async_session)],
+    token: str = Depends(oauth2_scheme)
+):
     """Add a vacancy to liked. Requires authentication."""
     pass
 
@@ -178,7 +204,11 @@ async def like_vacancy(id: int, token: str = Depends(oauth2_scheme)):
         "description": "Vacancy not found"
     }
 })
-async def unlike_vacancy(id: int, token: str = Depends(oauth2_scheme)):
+async def unlike_vacancy(
+    id: int,
+    session: Annotated[AsyncSession, Depends(get_async_session)],
+    token: str = Depends(oauth2_scheme)
+):
     """Remove a vacancy from liked. Requires authentication."""
     pass
 
@@ -194,8 +224,9 @@ async def unlike_vacancy(id: int, token: str = Depends(oauth2_scheme)):
     }
 })
 async def liked_resumes(
-        view: View,
-        token: str = Depends(oauth2_scheme)
+    view: View,
+    session: Annotated[AsyncSession, Depends(get_async_session)],
+    token: str = Depends(oauth2_scheme)
 ) -> ResumeList:
     """View the list of liked resumes. Requires authentication."""
     return ResumeList(
@@ -223,7 +254,11 @@ async def liked_resumes(
         "description": "Resume not found"
     }
 })
-async def like_resume(id: int, token: str = Depends(oauth2_scheme)):
+async def like_resume(
+    id: int,
+    session: Annotated[AsyncSession, Depends(get_async_session)],
+    token: str = Depends(oauth2_scheme)
+):
     """Add a resume to liked. Requires authentication."""
     pass
 
@@ -241,7 +276,11 @@ async def like_resume(id: int, token: str = Depends(oauth2_scheme)):
         "description": "Resume not found"
     }
 })
-async def unlike_resume(id: int, token: str = Depends(oauth2_scheme)):
+async def unlike_resume(
+    id: int,
+    session: Annotated[AsyncSession, Depends(get_async_session)],
+    token: str = Depends(oauth2_scheme)
+):
     """Remove a resume from liked. Requires authentication."""
     pass
 
@@ -252,7 +291,10 @@ async def unlike_resume(id: int, token: str = Depends(oauth2_scheme)):
         "description": "List of all available vacancies"
     },
 })
-async def vacancies(vacancies_view: VacanciesView) -> VacancyList:
+async def vacancies(
+    vacancies_view: VacanciesView,
+    session: Annotated[AsyncSession, Depends(get_async_session)]
+) -> VacancyList:
     """List all available vacancies."""
     return VacancyList(
         count=0,
@@ -276,7 +318,10 @@ async def vacancies(vacancies_view: VacanciesView) -> VacancyList:
         "description": "Vacancy not found"
     }
 })
-async def vacancy(id: int) -> Vacancy:
+async def vacancy(
+    id: int,
+    session: Annotated[AsyncSession, Depends(get_async_session)]
+) -> Vacancy:
     """Get a vacancy by ID."""
     return Vacancy(
         id=id,
@@ -293,7 +338,10 @@ async def vacancy(id: int) -> Vacancy:
         "description": "List of all available resumes"
     },
 })
-async def resumes(resumes_view: ResumesView) -> ResumeList:
+async def resumes(
+    resumes_view: ResumesView,
+    session: Annotated[AsyncSession, Depends(get_async_session)]
+) -> ResumeList:
     """List all available resumes."""
     return ResumeList(
         count=0,
@@ -317,7 +365,10 @@ async def resumes(resumes_view: ResumesView) -> ResumeList:
         "description": "Resume not found"
     }
 })
-async def resume(id: int) -> Resume:
+async def resume(
+    id: int,
+    session: Annotated[AsyncSession, Depends(get_async_session)]
+) -> Resume:
     """Get a resume by ID."""
     return Resume(
         id=id,
