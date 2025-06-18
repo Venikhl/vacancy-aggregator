@@ -4,13 +4,15 @@ This module contains all SQLAlchemy ORM models representing database tables
 and their relationships for the vacancy aggregator system.
 """
 
-from app.database.database import Base
 from sqlalchemy import (
     Column, Integer, String, Text,
     Numeric, TIMESTAMP, ForeignKey, Table
 )
 from sqlalchemy.sql import func
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, DeclarativeBase
+
+class Base(DeclarativeBase):
+    pass
 
 
 # Association tables for many-to-many relationships
