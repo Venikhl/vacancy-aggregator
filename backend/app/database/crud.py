@@ -264,7 +264,7 @@ class CRUDResume(CRUDBase):
         self,
         db: AsyncSession,
         resume_id: int
-    ) -> Optional[Vacancy]:
+    ) -> Optional[Resume]:
         """
         Get a resume along with its related data.
 
