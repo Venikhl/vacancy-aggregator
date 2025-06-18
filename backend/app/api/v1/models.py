@@ -211,6 +211,7 @@ class Resume(BaseModel):
     description: str | None = None
     location: Location | None = None
     experience_category: ExperienceCategory | None = None
+    skills: str | None = None
     education: str | None = None
     specialization: Specialization | None = None
     first_name: str | None = None
