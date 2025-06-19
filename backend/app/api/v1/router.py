@@ -368,8 +368,8 @@ async def liked_resumes(
         r_rel = await dbresume.get_with_relations(session, r.resume_id)
         if not r_rel:
             continue
-        resume = db_vacancy_to_vacancy(r_rel)
-        short_resume = vacancy_to_vacancy_short(resume)
+        resume = db_resume_to_resume(r_rel)
+        short_resume = resume_to_resume_short(resume)
         short_resumes.append(short_resume)
 
     return ResumeList(
