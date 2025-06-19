@@ -67,7 +67,7 @@ class User(BaseModel):
 class Salary(BaseModel):
     """Salary."""
 
-    type: str
+    type: str | None = None
     currency: str | None = None
     value: int | None = None
     """

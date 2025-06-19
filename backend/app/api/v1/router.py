@@ -701,6 +701,12 @@ def db_timestamp_to_timestamp(
 
 def db_vacancy_to_vacancy(db_vacancy: dbmodels.Vacancy) -> Vacancy:
     """Convert database Vacancy model to API Vacancy model."""
+    salary = Salary(
+        currency=db_vacancy.salary_currency,
+        value=db_vacancy.salary_value
+    )
+    if db_vacancy.salary_type:
+        salary.type = db_vacancy.salary_type.name
     return Vacancy(
         id=db_vacancy.id,
         external_id=db_vacancy.external_id,
@@ -708,11 +714,7 @@ def db_vacancy_to_vacancy(db_vacancy: dbmodels.Vacancy) -> Vacancy:
         title=db_vacancy.title,
         description=db_vacancy.description,
         company=db_company_to_company(db_vacancy.company),
-        salary=Salary(
-            type=db_vacancy.salary_type.name,
-            currency=db_vacancy.salary_currency,
-            value=db_vacancy.salary_value
-        ),
+        salary=salary,
         experience_category=db_experience_category_to_experience_category(
             db_vacancy.experience_category
         ),
@@ -743,16 +745,18 @@ def vacancy_to_vacancy_short(vacancy: Vacancy) -> VacancyShort:
 
 def db_resume_to_resume(db_resume: dbmodels.Resume) -> Resume:
     """Convert database Resume model to API Resume model."""
+    salary = Salary(
+        currency=db_resume.salary_currency,
+        value=db_resume.salary_value
+    )
+    if db_resume.salary_type:
+        salary.type = db_resume.salary_type.name
     return Resume(
         id=db_resume.id,
         external_id=db_resume.external_id,
         source=db_source_to_source(db_resume.source),
         title=db_resume.title,
-        salary=Salary(
-            type=db_resume.salary_type.name,
-            currency=db_resume.salary_currency,
-            value=db_resume.salary_value
-        ),
+        salary=salary,
         description=db_resume.description,
         location=db_location_to_location(db_resume.location),
         experience_category=db_experience_category_to_experience_category(
