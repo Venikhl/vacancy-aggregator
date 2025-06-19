@@ -521,7 +521,7 @@ async def vacancy(
     session: Annotated[AsyncSession, Depends(get_async_session)]
 ) -> Vacancy:
     """Get a vacancy by ID."""
-    db_vacancy = await dbvacancy.get(session, id)
+    db_vacancy = await dbvacancy.get_with_relations(session, id)
     if not db_vacancy:
         raise HTTPException(status_code=404, detail="Vacancy not found")
     return db_vacancy_to_vacancy(db_vacancy)
@@ -607,7 +607,7 @@ async def resume(
     session: Annotated[AsyncSession, Depends(get_async_session)]
 ) -> Resume:
     """Get a resume by ID."""
-    db_resume = await dbresume.get(session, id)
+    db_resume = await dbresume.get_with_relations(session, id)
     if not db_resume:
         raise HTTPException(status_code=404, detail="Resume not found")
     return db_resume_to_resume(db_resume)
