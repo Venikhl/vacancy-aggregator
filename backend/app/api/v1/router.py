@@ -613,53 +613,67 @@ async def resume(
     return db_resume_to_resume(db_resume)
 
 
-def db_source_to_source(db_source: dbmodels.Source) -> Source:
+def db_source_to_source(db_source: dbmodels.Source | None) -> Source | None:
     """Convert database Source model to API Source model."""
+    if not db_source:
+        return None
     return Source(
         name=db_source.name
     )
 
 
-def db_company_to_company(db_company: dbmodels.Company) -> Company:
+def db_company_to_company(
+    db_company: dbmodels.Company | None
+) -> Company | None:
     """Convert database Company model to API Company model."""
+    if not db_company:
+        return None
     return Company(
         name=db_company.name
     )
 
 
 def db_experience_category_to_experience_category(
-    db_experience_category: dbmodels.ExperienceCategory
-) -> ExperienceCategory:
+    db_experience_category: dbmodels.ExperienceCategory | None
+) -> ExperienceCategory | None:
     """Convert database ExperienceCategory model to API \
     ExperienceCategory model."""
+    if not db_experience_category:
+        return None
     return ExperienceCategory(
         name=db_experience_category.name
     )
 
 
 def db_location_to_location(
-    db_location: dbmodels.Location
-) -> Location:
+    db_location: dbmodels.Location | None
+) -> Location | None:
     """Convert database Location model to API Location model."""
+    if not db_location:
+        return None
     return Location(
         region=db_location.region
     )
 
 
 def db_specialization_to_specialization(
-    db_specialization: dbmodels.Specialization
-) -> Specialization:
+    db_specialization: dbmodels.Specialization | None
+) -> Specialization | None:
     """Convert database Specialization model to API Specialization model."""
+    if not db_specialization:
+        return None
     return Specialization(
         specialization=db_specialization.specialization
     )
 
 
 def db_employment_type_to_employment_type(
-    db_empolyment_type: dbmodels.EmploymentType
-) -> EmploymentType:
+    db_empolyment_type: dbmodels.EmploymentType | None
+) -> EmploymentType | None:
     """Convert database EmploymentType model to API \
     EmploymentType model."""
+    if not db_empolyment_type:
+        return None
     return EmploymentType(
         name=db_empolyment_type.name
     )
@@ -676,8 +690,10 @@ def db_employment_types_to_employment_type_list(
 
 def db_timestamp_to_timestamp(
     db_timestamp
-) -> TimeStamp:
+) -> TimeStamp | None:
     """Convert database TimeStamp model to API TimeStamp model."""
+    if not db_timestamp:
+        return None
     return TimeStamp(
         time_stamp=str(db_timestamp)
     )
