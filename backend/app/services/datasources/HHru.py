@@ -40,11 +40,26 @@ class ScheduleType(str, Enum):
 class VacancyFilters(BaseModel):
     """Vacancy search filters model."""
     text: Optional[str] = Field(None, description="Search text")
-    area: Optional[int] = Field(None, description="Area ID")
-    professional_role: Optional[int] = Field(None, description="Professional role ID")
+    area: Optional[int] = Field(None, description="Area ID (e.g., 1 for Moscow)")
+    professional_role: Optional[int] = Field(None, description="professional_role ID")
+    industry: Optional[int] = Field(None, description="Industry ID")
     experience: Optional[ExperienceLevel] = Field(None, description="Experience level")
     employment: Optional[EmploymentType] = Field(None, description="Employment type")
     schedule: Optional[ScheduleType] = Field(None, description="Schedule type")
+    salary_from: Optional[int] = Field(None, ge=0, description="Minimum salary")
+    salary_to: Optional[int] = Field(None, ge=0, description="Maximum salary")
+    currency: Optional[str] = Field("RUR", description="Currency code")
+    only_with_salary: Optional[bool] = Field(False, description="Only vacancies with salary")
+    date_from: Optional[datetime] = Field(None, description="Published from date")
+    date_to: Optional[datetime] = Field(None, description="Published to date")
+
+    @validator('salary_to')
+    def validate_salary_range(cls, v, values):
+        """Validate that salary_to >= salary_from."""
+        if v is not None and 'salary_from' in values and values['salary_from'] is not None:
+            if v < values['salary_from']:
+                raise ValueError('salary_to must be greater than or equal to salary_from')
+        return v
 
 
 @dataclass
@@ -193,25 +208,39 @@ class HHAPIParser:
             self.logger.error(f"Network error: {e}")
             raise
 
+    # Update search parameters
     async def _search_vacancies_page(self, filters: VacancyFilters, page: int = 0) -> Dict[str, Any]:
-        """Search vacancies for a specific page."""
+        """Search vacancies with enhanced filters."""
         params = {
             'page': page,
             'per_page': 100,
         }
 
+        # Add all filters
         if filters.text:
             params['text'] = filters.text
         if filters.area:
             params['area'] = filters.area
         if filters.professional_role:
             params['professional_role'] = filters.professional_role
+        if filters.industry:
+            params['industry'] = filters.industry
         if filters.experience:
             params['experience'] = filters.experience.value
         if filters.employment:
             params['employment'] = filters.employment.value
         if filters.schedule:
             params['schedule'] = filters.schedule.value
+        if filters.salary_from:
+            params['salary'] = filters.salary_from
+        if filters.currency:
+            params['currency'] = filters.currency
+        if filters.only_with_salary:
+            params['only_with_salary'] = 'true'
+        if filters.date_from:
+            params['date_from'] = filters.date_from.strftime('%Y-%m-%dT%H:%M:%S')
+        if filters.date_to:
+            params['date_to'] = filters.date_to.strftime('%Y-%m-%dT%H:%M:%S')
 
         return await self._make_request('GET', '/vacancies', params=params)
 
