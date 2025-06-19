@@ -1,7 +1,7 @@
 """CRUD operations."""
 
-from typing import List, Optional, Type, TypeVar
-from sqlalchemy import select, and_, or_
+from typing import List, Optional, Tuple, Type, TypeVar
+from sqlalchemy import select, and_, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from datetime import datetime
@@ -161,12 +161,14 @@ class CRUDVacancy(CRUDBase):
             select(Vacancy)
             .options(
                 joinedload(Vacancy.company),
+                joinedload(Vacancy.source),
                 joinedload(Vacancy.location),
                 joinedload(Vacancy.specialization),
                 joinedload(Vacancy.experience_category),
-                joinedload(Vacancy.employment_types)
+                joinedload(Vacancy.employment_types),
+                joinedload(Vacancy.salary_type)
             )
-            .where(Vacancy.vacancy_id == vacancy_id)
+            .where(Vacancy.id == vacancy_id)
         )
         return result.scalars().first()
 
@@ -179,13 +181,13 @@ class CRUDVacancy(CRUDBase):
         specialization_id: Optional[int] = None,
         min_salary: Optional[float] = None,
         max_salary: Optional[float] = None,
-        experience_category_id: Optional[int] = None,
+        experience_category_ids: Optional[List[int]] = None,
         location_id: Optional[int] = None,
         employment_type_ids: Optional[List[int]] = None,
         published_after: Optional[datetime] = None,
         skip: int = 0,
         limit: int = 100
-    ) -> List[Vacancy]:
+    ) -> Tuple[int, List[Vacancy]]:
         """
         Search for vacancies with various filters.
 
@@ -204,7 +206,7 @@ class CRUDVacancy(CRUDBase):
             limit (int): Pagination limit.
 
         Returns:
-            List[Vacancy]: List of matching vacancies.
+            (int, List[Vacancy]): List of matching vacancies with total count.
         """
         query = select(Vacancy).options(
             joinedload(Vacancy.company),
@@ -222,9 +224,12 @@ class CRUDVacancy(CRUDBase):
             filters.append(Vacancy.salary_value >= min_salary)
         if max_salary:
             filters.append(Vacancy.salary_value <= max_salary)
-        if experience_category_id:
-            filters.append(
-                Vacancy.experience_category_id == experience_category_id)
+        if experience_category_ids:
+            experience_category_filters = [
+                Vacancy.experience_category_id == id
+                for id in experience_category_ids
+            ]
+            filters.append(or_(*experience_category_filters))
         if location_id:
             filters.append(Vacancy.location_id == location_id)
         if published_after:
@@ -242,13 +247,18 @@ class CRUDVacancy(CRUDBase):
         if filters:
             query = query.where(and_(*filters))
 
+        count_query = select(func.count()).select_from(Vacancy)
+        if filters:
+            count_query = count_query.where(and_(*filters))
+
+        total = await db.execute(count_query)
         result = await db.execute(
             query
             .offset(skip)
             .limit(limit)
             .distinct()
         )
-        return result.scalars().all()
+        return (total.scalar_one(), result.scalars().all())
 
 
 class CRUDResume(CRUDBase):
@@ -258,6 +268,34 @@ class CRUDResume(CRUDBase):
         """Initialize CRUDResume."""
         super().__init__(Resume)
 
+    async def get_with_relations(
+        self,
+        db: AsyncSession,
+        resume_id: int
+    ) -> Optional[Resume]:
+        """
+        Get a resume along with its related data.
+
+        Args:
+            db (AsyncSession): Async database session.
+            resume_id (int): ID of the resume.
+
+        Returns:
+            Optional[Resume]: Resume object with related fields loaded.
+        """
+        result = await db.execute(
+            select(Resume)
+            .options(
+                joinedload(Resume.source),
+                joinedload(Resume.salary_type),
+                joinedload(Resume.location),
+                joinedload(Resume.experience_category),
+                joinedload(Resume.specialization)
+            )
+            .where(Resume.id == resume_id)
+        )
+        return result.scalars().first()
+
     async def search(
         self,
         db: AsyncSession,
@@ -266,12 +304,12 @@ class CRUDResume(CRUDBase):
         specialization_id: Optional[int] = None,
         min_salary: Optional[float] = None,
         max_salary: Optional[float] = None,
-        experience_category_id: Optional[int] = None,
+        experience_category_ids: Optional[List[int]] = None,
         location_id: Optional[int] = None,
         skills: Optional[List[str]] = None,
         skip: int = 0,
         limit: int = 100
-    ) -> List[Resume]:
+    ) -> Tuple[int, List[Resume]]:
         """
         Search resumes using various filters.
 
@@ -288,7 +326,7 @@ class CRUDResume(CRUDBase):
             limit (int): Pagination limit.
 
         Returns:
-            List[Resume]: Filtered list of resumes.
+            (int, List[Resume]): Filtered list of resumes with total count.
         """
         query = select(Resume).options(
             joinedload(Resume.location),
@@ -304,9 +342,12 @@ class CRUDResume(CRUDBase):
             filters.append(Resume.salary_value >= min_salary)
         if max_salary:
             filters.append(Resume.salary_value <= max_salary)
-        if experience_category_id:
-            filters.append(
-                Resume.experience_category_id == experience_category_id)
+        if experience_category_ids:
+            experience_category_filters = [
+                Resume.experience_category_id == id
+                for id in experience_category_ids
+            ]
+            filters.append(or_(*experience_category_filters))
         if location_id:
             filters.append(Resume.location_id == location_id)
         if skills:
@@ -318,12 +359,18 @@ class CRUDResume(CRUDBase):
         if filters:
             query = query.where(and_(*filters))
 
+        count_query = select(func.count()).select_from(Resume)
+        if filters:
+            count_query = count_query.where(and_(*filters))
+
+        total = await db.execute(count_query)
         result = await db.execute(
             query
             .offset(skip)
             .limit(limit)
         )
-        return result.scalars().all()
+
+        return (total.scalar_one(), result.scalars().all())
 
 
 class CRUDUser(CRUDBase):
@@ -350,6 +397,23 @@ class CRUDUser(CRUDBase):
         )
         return result.scalars().first()
 
+    async def get_by_id(
+            self, db: AsyncSession, id: int) -> Optional[User]:
+        """
+        Get a user by ID.
+
+        Args:
+            db (AsyncSession): Async database session.
+            id (int): User ID.
+
+        Returns:
+            Optional[User]: User object if found.
+        """
+        result = await db.execute(
+            select(User).where(User.id == id)
+        )
+        return result.scalars().first()
+
     async def add_favorite_vacancy(
         self,
         db: AsyncSession,
@@ -369,7 +433,7 @@ class CRUDUser(CRUDBase):
         """
         user = await self.get(db, id=user_id)
         if user:
-            stmt = select(Vacancy).where(Vacancy.vacancy_id == vacancy_id)
+            stmt = select(Vacancy).where(Vacancy.id == vacancy_id)
             result = await db.execute(stmt)
             vacancy = result.scalars().first()
             if vacancy:
@@ -397,7 +461,7 @@ class CRUDUser(CRUDBase):
         """
         user = await self.get(db, id=user_id)
         if user:
-            stmt = select(Vacancy).where(Vacancy.vacancy_id == vacancy_id)
+            stmt = select(Vacancy).where(Vacancy.id == vacancy_id)
             result = await db.execute(stmt)
             vacancy = result.scalars().first()
             if vacancy and vacancy in user.favorite_vacancies:
@@ -412,7 +476,7 @@ class CRUDUser(CRUDBase):
         user_id: int,
         skip: int = 0,
         limit: int = 100
-    ) -> List[Vacancy]:
+    ) -> Tuple[int, List[Vacancy]]:
         """
         Retrieve user's favorite vacancies.
 
@@ -423,11 +487,12 @@ class CRUDUser(CRUDBase):
             limit (int): Max number of results.
 
         Returns:
-            List[Vacancy]: List of favorite vacancies.
+            (int, List[Vacancy]): Total count and paginated list
+            of favorite vacancies.
         """
         user = await self.get(db, id=user_id)
         if not user:
-            return []
+            return (0, [])
 
         result = await db.execute(
             select(Vacancy)
@@ -436,7 +501,13 @@ class CRUDUser(CRUDBase):
             .offset(skip)
             .limit(limit)
         )
-        return result.scalars().all()
+        count_result = await db.execute(
+            select(func.count())
+            .select_from(user_favorite_vacancies)
+            .where(user_favorite_vacancies.c.user_id == user_id)
+        )
+
+        return (count_result.scalar_one(), result.scalars().all())
 
     async def add_favorite_resume(
         self,
@@ -457,7 +528,7 @@ class CRUDUser(CRUDBase):
         """
         user = await self.get(db, id=user_id)
         if user:
-            stmt = select(Resume).where(Resume.resume_id == resume_id)
+            stmt = select(Resume).where(Resume.id == resume_id)
             result = await db.execute(stmt)
             resume = result.scalars().first()
             if resume:
@@ -485,7 +556,7 @@ class CRUDUser(CRUDBase):
         """
         user = await self.get(db, id=user_id)
         if user:
-            stmt = select(Resume).where(Resume.resume_id == resume_id)
+            stmt = select(Resume).where(Resume.id == resume_id)
             result = await db.execute(stmt)
             resume = result.scalars().first()
             if resume and resume in user.favorite_resumes:
@@ -500,7 +571,7 @@ class CRUDUser(CRUDBase):
         user_id: int,
         skip: int = 0,
         limit: int = 100
-    ) -> List[Resume]:
+    ) -> Tuple[int, List[Resume]]:
         """
         Retrieve user's favorite resumes with related data.
 
@@ -511,11 +582,12 @@ class CRUDUser(CRUDBase):
             limit (int): Pagination limit.
 
         Returns:
-            List[Resume]: List of favorite resumes.
+            List[Resume]: Total count and paginated list
+            of favorite resumes.
         """
         user = await self.get(db, id=user_id)
         if not user:
-            return []
+            return (0, [])
 
         result = await db.execute(
             select(Resume)
@@ -529,7 +601,36 @@ class CRUDUser(CRUDBase):
             .offset(skip)
             .limit(limit)
         )
-        return result.scalars().unique().all()
+        count_result = await db.execute(
+            select(func.count())
+            .select_from(user_favorite_resumes)
+            .where(user_favorite_resumes.c.user_id == user_id)
+        )
+        return (count_result.scalar_one(), result.scalars().unique().all())
+
+
+async def get_experience_category_by_name(
+    db: AsyncSession,
+    name: str
+) -> Optional[ExperienceCategory]:
+    """Get experience category by name."""
+    result = await db.execute(
+        select(ExperienceCategory)
+        .where(ExperienceCategory.name == name)
+    )
+    return result.scalars().first()
+
+
+async def get_location_by_region(
+    db: AsyncSession,
+    region: str
+) -> Optional[Location]:
+    """Get location by region."""
+    result = await db.execute(
+        select(Location)
+        .where(Location.region == region)
+    )
+    return result.scalars().first()
 
 
 # CRUD instances

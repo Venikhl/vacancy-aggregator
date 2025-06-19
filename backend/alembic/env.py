@@ -1,7 +1,7 @@
 """Alembic migration environment configuration.
 
-This module contains the configuration for running database migrations 
-using Alembic with async SQLAlchemy support. It handles both online 
+This module contains the configuration for running database migrations
+using Alembic with async SQLAlchemy support. It handles both online
 (connected to database) and offline (SQL generation) migration modes.
 """
 
@@ -9,12 +9,16 @@ from logging.config import fileConfig
 from sqlalchemy.ext.asyncio import create_async_engine
 from alembic import context
 import asyncio
+from app.core.config import get_settings
 
 from app.database.models import Base
+
+settings = get_settings()
 
 # This is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 # Interpret the config file for Python logging.
 fileConfig(config.config_file_name)
@@ -42,7 +46,7 @@ def run_migrations_offline():
 
 def do_run_migrations(connection):
     """Execute migrations synchronously using the given connection.
-    
+
     Args:
         connection: A synchronous database connection object
     """
@@ -55,7 +59,7 @@ def do_run_migrations(connection):
 
 async def run_async_migrations():
     """Run migrations in 'online' mode using async engine.
-    
+
     Creates an async engine and runs migrations through
     a synchronous adapter layer.
     """
