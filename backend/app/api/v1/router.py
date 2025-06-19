@@ -257,7 +257,7 @@ async def liked_vacancies(
     )
     short_vacancies = []
     for v in vacancies:
-        v_rel = await dbvacancy.get_with_relations(session, v.vacancy_id)
+        v_rel = await dbvacancy.get_with_relations(session, v.id)
         if not v_rel:
             continue
         vacancy = db_vacancy_to_vacancy(v_rel)
@@ -299,7 +299,7 @@ async def like_vacancy(
     db_vacancy = await dbvacancy.get_with_relations(session, id)
     if not db_vacancy:
         raise HTTPException(status_code=404, detail="Vacancy not found")
-    await user.add_favorite_vacancy(session, user_id, db_vacancy.vacancy_id)
+    await user.add_favorite_vacancy(session, user_id, db_vacancy.id)
 
 
 @router.get("/unlike_vacancy/{id}", responses={
@@ -331,7 +331,7 @@ async def unlike_vacancy(
     db_vacancy = await dbvacancy.get_with_relations(session, id)
     if not db_vacancy:
         raise HTTPException(status_code=404, detail="Vacancy not found")
-    await user.remove_favorite_vacancy(session, user_id, db_vacancy.vacancy_id)
+    await user.remove_favorite_vacancy(session, user_id, db_vacancy.id)
 
 
 @router.post("/liked_resumes", responses={
@@ -365,7 +365,7 @@ async def liked_resumes(
     )
     short_resumes = []
     for r in resumes:
-        r_rel = await dbresume.get_with_relations(session, r.resume_id)
+        r_rel = await dbresume.get_with_relations(session, r.id)
         if not r_rel:
             continue
         resume = db_resume_to_resume(r_rel)
@@ -407,7 +407,7 @@ async def like_resume(
     db_resume = await dbresume.get_with_relations(session, id)
     if not db_resume:
         raise HTTPException(status_code=404, detail="Resume not found")
-    await user.add_favorite_vacancy(session, user_id, db_resume.resume_id)
+    await user.add_favorite_vacancy(session, user_id, db_resume.id)
 
 
 @router.get("/unlike_resume/{id}", responses={
@@ -439,7 +439,7 @@ async def unlike_resume(
     db_resume = await dbresume.get_with_relations(session, id)
     if not db_resume:
         raise HTTPException(status_code=404, detail="Resume not found")
-    await user.remove_favorite_vacancy(session, user_id, db_resume.resume_id)
+    await user.remove_favorite_vacancy(session, user_id, db_resume.id)
 
 
 @router.post("/vacancies", responses={
@@ -492,7 +492,7 @@ async def vacancies(
         for db_vacancy in db_vacancy_list:
             v_rel = await dbvacancy.get_with_relations(
                 session,
-                db_vacancy.resume_id
+                db_vacancy.id
             )
             if not v_rel:
                 continue
@@ -578,7 +578,7 @@ async def resumes(
         for db_resume in db_resume_list:
             r_rel = await dbresume.get_with_relations(
                 session,
-                db_resume.resume_id
+                db_resume.id
             )
             if not r_rel:
                 continue
