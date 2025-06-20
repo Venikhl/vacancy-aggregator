@@ -208,6 +208,61 @@ class HHAPIParser:
             self.logger.error(f"Network error: {e}")
             raise
 
+    def _split_date_range_aggressive(self, date_from: datetime, date_to: datetime, initial_days: int = 7) -> List[
+        tuple]:
+        """Split date range into smaller chunks to bypass API limits."""
+        ranges = []
+        current_start = date_from
+        current_days = initial_days
+
+        while current_start < date_to:
+            current_end = min(current_start + timedelta(days=current_days), date_to)
+            ranges.append((current_start, current_end))
+            current_start = current_end + timedelta(seconds=1)
+
+            # Reduce range if we're still hitting limits
+            if current_days > 1:
+                current_days = max(1, current_days // 2)
+
+        return ranges
+
+    async def search_vacancies_with_splitting(self, filters: VacancyFilters) -> List[VacancyRecord]:
+        """Search vacancies with automatic date range splitting."""
+        # Set default date range if not provided
+        if not filters.date_from or not filters.date_to:
+            filters.date_to = datetime.now()
+            filters.date_from = filters.date_to - timedelta(days=30)
+
+        # Check if we need splitting
+        initial_response = await self._search_vacancies_page(filters, 0)
+        total_found = initial_response.get('found', 0)
+
+        if total_found <= 2000:
+            # Simple pagination is sufficient
+            return await self.search_vacancies_simple(filters)
+
+        # Need date splitting
+        self.logger.info(f"Total vacancies found: {total_found}, using date splitting")
+        date_ranges = self._split_date_range_aggressive(filters.date_from, filters.date_to)
+
+        all_vacancies = []
+        seen_ids = set()
+
+        for date_from, date_to in date_ranges:
+            date_filters = filters.copy()
+            date_filters.date_from = date_from
+            date_filters.date_to = date_to
+
+            vacancies = await self.search_vacancies_simple(date_filters)
+
+            # Deduplicate
+            for vacancy in vacancies:
+                if vacancy.external_id not in seen_ids:
+                    seen_ids.add(vacancy.external_id)
+                    all_vacancies.append(vacancy)
+
+        return all_vacancies
+
     # Update search parameters
     async def _search_vacancies_page(self, filters: VacancyFilters, page: int = 0) -> Dict[str, Any]:
         """Search vacancies with enhanced filters."""
