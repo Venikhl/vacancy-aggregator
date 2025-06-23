@@ -467,7 +467,7 @@ async def vacancies(
                 )
             if not db_experience_category:
                 continue
-            experience_category_ids.append(db_experience_category.category_id)
+            experience_category_ids.append(db_experience_category.id)
     location_id: Optional[int] = None
     if filter.location:
         db_location = await get_location_by_region(
@@ -476,19 +476,25 @@ async def vacancies(
         )
         if db_location:
             location_id = db_location.location_id
+
+    offset = vacancies_view.view.offset
+    count = vacancies_view.view.count
+
     db_vacancies = await dbvacancy.search(
         session,
         title=filter.title,
         min_salary=filter.salary_min,
         max_salary=filter.salary_max,
         experience_category_ids=experience_category_ids,
-        location_id=location_id
+        location_id=location_id,
+        offset=offset,
+        limit=count
     )
     vacancies = []
     vacancy_count = 0
     if db_vacancies:
-        (count, db_vacancy_list) = db_vacancies
-        vacancy_count = count
+        (total_count, db_vacancy_list) = db_vacancies
+        vacancy_count = total_count
         for db_vacancy in db_vacancy_list:
             v_rel = await dbvacancy.get_with_relations(
                 session,
@@ -552,7 +558,7 @@ async def resumes(
                 )
             if not db_experience_category:
                 continue
-            experience_category_ids.append(db_experience_category.category_id)
+            experience_category_ids.append(db_experience_category.id)
     location_id: Optional[int] = None
     if filter.location:
         db_location = await get_location_by_region(

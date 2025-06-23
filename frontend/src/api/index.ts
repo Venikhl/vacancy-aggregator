@@ -14,3 +14,7 @@ export const getVacancies = async (
     },
   });
 };
+
+export const getVacancyById = async (id: number | string) => {
+  return axios.get(`/api/v1/vacancy/${id}`);
+};

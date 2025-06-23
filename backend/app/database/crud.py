@@ -4,12 +4,11 @@ from typing import List, Optional, Tuple, Type, TypeVar
 from sqlalchemy import select, and_, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
-from datetime import datetime
 from pydantic import BaseModel
 from .models import (
     User, Vacancy, Resume, Company, Location,
     Specialization, EmploymentType, ExperienceCategory,
-    Source, SalaryType, vacancy_employment_type,
+    Source, SalaryType,
     user_favorite_vacancies, user_favorite_resumes
 )
 
@@ -174,35 +173,26 @@ class CRUDVacancy(CRUDBase):
 
     async def search(
         self,
-        db: AsyncSession,
-        *,
+        session: AsyncSession,
         title: Optional[str] = None,
-        company_id: Optional[int] = None,
-        specialization_id: Optional[int] = None,
-        min_salary: Optional[float] = None,
-        max_salary: Optional[float] = None,
+        min_salary: Optional[int] = None,
+        max_salary: Optional[int] = None,
         experience_category_ids: Optional[List[int]] = None,
         location_id: Optional[int] = None,
-        employment_type_ids: Optional[List[int]] = None,
-        published_after: Optional[datetime] = None,
-        skip: int = 0,
-        limit: int = 100
-    ) -> Tuple[int, List[Vacancy]]:
+        offset: int = 0,
+        limit: int = 20
+    ):
         """
         Search for vacancies with various filters.
 
         Args:
-            db (AsyncSession): Async database session.
+            session (AsyncSession): Async database session.
             title (str, optional): Vacancy title to search.
-            company_id (int, optional): Company filter.
-            specialization_id (int, optional): Specialization filter.
-            min_salary (float, optional): Minimum salary.
-            max_salary (float, optional): Maximum salary.
+            min_salary (int, optional): Minimum salary.
+            max_salary (int, optional): Maximum salary.
             experience_category_id (int, optional): Experience filter.
             location_id (int, optional): Location filter.
-            employment_type_ids (List[int], optional): Employment types.
-            published_after (datetime, optional): Filter by published date.
-            skip (int): Pagination offset.
+            offset (int): Pagination offset.
             limit (int): Pagination limit.
 
         Returns:
@@ -213,52 +203,28 @@ class CRUDVacancy(CRUDBase):
             joinedload(Vacancy.location)
         )
 
-        filters = []
-        if title:
-            filters.append(Vacancy.title.ilike(f"%{title}%"))
-        if company_id:
-            filters.append(Vacancy.company_id == company_id)
-        if specialization_id:
-            filters.append(Vacancy.specialization_id == specialization_id)
-        if min_salary:
-            filters.append(Vacancy.salary_value >= min_salary)
-        if max_salary:
-            filters.append(Vacancy.salary_value <= max_salary)
         if experience_category_ids:
-            experience_category_filters = [
-                Vacancy.experience_category_id == id
-                for id in experience_category_ids
-            ]
-            filters.append(or_(*experience_category_filters))
+            query = query.where(
+                Vacancy.experience_category_id.in_(experience_category_ids)
+            )
         if location_id:
-            filters.append(Vacancy.location_id == location_id)
-        if published_after:
-            filters.append(Vacancy.published_at >= published_after)
-        if employment_type_ids:
-            query = query.join(
-                vacancy_employment_type,
-                Vacancy.vacancy_id == vacancy_employment_type.c.vacancy_id
-            )
-            filters.append(
-                vacancy_employment_type.c.employment_type_id.in_(
-                    employment_type_ids)
-            )
+            query = query.where(Vacancy.location_id == location_id)
+        if title:
+            query = query.where(Vacancy.title.ilike(f"%{title}%"))
+        if min_salary is not None:
+            query = query.where(Vacancy.salary_value >= min_salary)
+        if max_salary is not None:
+            query = query.where(Vacancy.salary_value <= max_salary)
 
-        if filters:
-            query = query.where(and_(*filters))
-
-        count_query = select(func.count()).select_from(Vacancy)
-        if filters:
-            count_query = count_query.where(and_(*filters))
-
-        total = await db.execute(count_query)
-        result = await db.execute(
-            query
-            .offset(skip)
-            .limit(limit)
-            .distinct()
+        total_count = await session.scalar(
+            select(func.count()).select_from(query.subquery())
         )
-        return (total.scalar_one(), result.scalars().all())
+
+        query = query.offset(offset).limit(limit)
+
+        result = await session.execute(query)
+        vacancies = result.scalars().all()
+        return total_count, vacancies
 
 
 class CRUDResume(CRUDBase):
