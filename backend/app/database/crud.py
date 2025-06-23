@@ -4,7 +4,6 @@ from typing import List, Optional, Tuple, Type, TypeVar
 from sqlalchemy import select, and_, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
-from datetime import datetime
 from pydantic import BaseModel
 from .models import (
     User, Vacancy, Resume, Company, Location,
@@ -205,7 +204,9 @@ class CRUDVacancy(CRUDBase):
         )
 
         if experience_category_ids:
-            query = query.where(Vacancy.experience_category_id.in_(experience_category_ids))
+            query = query.where(
+                Vacancy.experience_category_id.in_(experience_category_ids)
+            )
         if location_id:
             query = query.where(Vacancy.location_id == location_id)
         if title:
@@ -215,7 +216,9 @@ class CRUDVacancy(CRUDBase):
         if max_salary is not None:
             query = query.where(Vacancy.salary_value <= max_salary)
 
-        total_count = await session.scalar(select(func.count()).select_from(query.subquery()))
+        total_count = await session.scalar(
+            select(func.count()).select_from(query.subquery())
+        )
 
         query = query.offset(offset).limit(limit)
 
