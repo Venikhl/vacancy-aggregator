@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from .models import (
     User, Vacancy, Resume, Company, Location,
     Specialization, EmploymentType, ExperienceCategory,
-    Source, SalaryType, vacancy_employment_type,
+    Source, SalaryType,
     user_favorite_vacancies, user_favorite_resumes
 )
 
