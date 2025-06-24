@@ -709,14 +709,12 @@ if __name__ == "__main__":
         ]
     )
 
-    # Start with a small test to verify rate limiting works
-    test_roles = [44, 45, 46, 48, 144, 169, 174, 30, 47, 111, 112, 114, 96, 124]  # IT roles for testing
-    logging.info("Starting with test roles to verify rate limiting...")
+    test_roles = [44, 45, 46, 48, 144, 169, 174, 30, 47, 111, 112, 114, 96, 124]  # Engineer roles
 
     # Test run
     asyncio.run(parse_and_save_vacancies_json(
         test_roles,
-        'test_vacancies2.json',
+        'test_vacancies.json',
         max_results_per_role=100,  # Limited for testing
         delay_between_roles=15  # Conservative delay for testing
     ))
