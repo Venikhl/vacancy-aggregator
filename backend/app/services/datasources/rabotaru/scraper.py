@@ -76,8 +76,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--limit",
         type=int,
-        default=29,
-        help="Maximum number of vacancies to fetch (default: 29)",
+        default=100,
+        help="Maximum number of vacancies to fetch (default: 100)",
     )
     parser.add_argument(
         "--output",
@@ -88,9 +88,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--concurrency",
         type=int,
-        default=1,
+        default=10,
         help="Number of concurrent requests when fetching full vacancy pages "
-        "(default: 1)",
+        "(default: 10)",
     )
     return parser.parse_args()
 
