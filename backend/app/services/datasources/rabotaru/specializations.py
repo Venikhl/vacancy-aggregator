@@ -85,5 +85,5 @@ def get_it_spec_ids() -> list[int]:
     result: list[int] = []
     for spec in catalog.specializations:
         if spec.label in IT_SPECIALIZATIONS:
-            result.append(spec.label)
+            result.append(spec.id)
     return result
