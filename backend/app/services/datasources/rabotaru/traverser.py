@@ -92,6 +92,8 @@ def parse_vacancies(
         if not a or not a.get("href"):
             continue  # skip corrupt card
         href_abs = urljoin(base_url, a["href"])
+        cleaned_url = href_abs.partition("/?")[0]
+
         title = a.get_text(strip=True)
         # id is the second path segment: /vacancy/53515632/…
         parts = urlparse(href_abs).path.strip("/").split("/")
@@ -115,7 +117,7 @@ def parse_vacancies(
                 title=title,
                 description=description,
                 salary=salary,
-                url=href_abs,
+                url=cleaned_url,
             )
         )
     return out
