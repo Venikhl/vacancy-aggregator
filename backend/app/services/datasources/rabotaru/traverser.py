@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from pydantic import BaseModel
 
 from app.api.v1.models import Salary, VacancyShort
-from backend.app.services.datasources.rabotaru._api import _fetch
+from app.services.datasources.rabotaru._api import _fetch
 
 
 class VacancyShortWithUrl(VacancyShort):
