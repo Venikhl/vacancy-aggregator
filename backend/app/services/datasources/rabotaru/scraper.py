@@ -3,7 +3,7 @@ Traverse Rabota.ru, download vacancies, and save them as JSON.
 
 Usage examples:
     python -m app.services.datasources.rabotaru.scraper # default 100 vacancies -> vacancies.json
-    
+
     python -m app.services.datasources.rabotaru.scraper --limit 500 \
                                                         --output data/rabota_2025-06-25.json \
                                                         --concurrency 20
@@ -76,8 +76,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--limit",
         type=int,
-        default=100,
-        help="Maximum number of vacancies to fetch (default: 100)",
+        default=29,
+        help="Maximum number of vacancies to fetch (default: 29)",
     )
     parser.add_argument(
         "--output",
@@ -88,9 +88,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--concurrency",
         type=int,
-        default=10,
+        default=1,
         help="Number of concurrent requests when fetching full vacancy pages "
-        "(default: 10)",
+        "(default: 1)",
     )
     return parser.parse_args()
 
