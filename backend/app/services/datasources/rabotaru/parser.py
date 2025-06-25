@@ -40,7 +40,7 @@ async def parse_vacancy(short: VacancyShort) -> Vacancy:
         description = education + "\n\n" + description
 
     return Vacancy(
-        id=short.id,
+        id=-1,
         external_id=str(short.id),
         source=Source(name=SOURCE),
         title=short.title,
