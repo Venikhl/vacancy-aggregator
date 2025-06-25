@@ -46,25 +46,35 @@ class ScheduleType(str, Enum):
 class VacancyFilters(BaseModel):
     """Vacancy search filters model."""
     text: Optional[str] = Field(None, description="Search text")
-    area: Optional[int] = Field(None, description="Area ID (e.g., 1 for Moscow)")
-    professional_role: Optional[int] = Field(None, description="professional_role ID")
+    area: Optional[int] = Field(
+        None, description="Area ID (e.g., 1 for Moscow)")
+    professional_role: Optional[int] = Field(
+        None, description="professional_role ID")
     industry: Optional[int] = Field(None, description="Industry ID")
-    experience: Optional[ExperienceLevel] = Field(None, description="Experience level")
-    employment: Optional[EmploymentType] = Field(None, description="Employment type")
+    experience: Optional[ExperienceLevel] = Field(
+        None, description="Experience level")
+    employment: Optional[EmploymentType] = Field(
+        None, description="Employment type")
     schedule: Optional[ScheduleType] = Field(None, description="Schedule type")
-    salary_from: Optional[int] = Field(None, ge=0, description="Minimum salary")
+    salary_from: Optional[int] = Field(
+        None, ge=0, description="Minimum salary")
     salary_to: Optional[int] = Field(None, ge=0, description="Maximum salary")
-    currency: Optional[str] = Field("RUR", description="Currency code")
-    only_with_salary: Optional[bool] = Field(False, description="Only vacancies with salary")
-    date_from: Optional[datetime] = Field(None, description="Published from date")
+    currency: Optional[str] = Field(
+        "RUR", description="Currency code")
+    only_with_salary: Optional[bool] = Field(
+        False, description="Only vacancies with salary")
+    date_from: Optional[datetime] = Field(
+        None, description="Published from date")
     date_to: Optional[datetime] = Field(None, description="Published to date")
 
     @validator('salary_to')
     def validate_salary_range(cls, v, values):
         """Validate that salary_to >= salary_from."""
-        if v is not None and 'salary_from' in values and values['salary_from'] is not None:
+        if (v is not None and 'salary_from' in values and
+                values['salary_from'] is not None):
             if v < values['salary_from']:
-                raise ValueError('salary_to must be greater than or equal to salary_from')
+                raise ValueError(
+                    'salary_to must be greater than or equal to salary_from')
         return v
 
 
@@ -131,21 +141,24 @@ class RateLimiter:
         effective_rps = self.max_requests_per_second / self._backoff_factor
 
         # Clean old requests (1 second window)
-        self._requests = [req_time for req_time in self._requests if now - req_time < 1.0]
+        self._requests = [req_time for req_time in
+                          self._requests if now - req_time < 1.0]
 
         # Clean old minute requests (60 second window)
-        self._minute_requests = [req_time for req_time in self._minute_requests if now - req_time < 60.0]
+        self._minute_requests = [req_time for req_time in self._minute_requests
+                                 if now - req_time < 60.0]
 
         # Check per-second limit
         if len(self._requests) >= effective_rps:
-            sleep_time = 1.0 - (now - self._requests[0]) + 0.1  # Add small buffer
+            sleep_time = 1.0 - (now - self._requests[0]) + 0.1  # Add buffer
             if sleep_time > 0:
                 await asyncio.sleep(sleep_time)
                 return await self.acquire()
 
         # Check per-minute limit
         if len(self._minute_requests) >= self.max_requests_per_minute:
-            sleep_time = 60.0 - (now - self._minute_requests[0]) + 1.0  # Add buffer
+            sleep_time = 60.0 - (now -
+                                 self._minute_requests[0]) + 1.0  # Add buffer
             if sleep_time > 0:
                 await asyncio.sleep(sleep_time)
                 return await self.acquire()
@@ -209,7 +222,8 @@ class HHAPIParser:
         self.client_id = client_id
         self.client_secret = client_secret
         self.access_token = access_token
-        self.rate_limiter = rate_limiter or RateLimiter(max_requests_per_second=8.0)  # Even more conservative
+        self.rate_limiter = (rate_limiter or
+                             RateLimiter(max_requests_per_second=8.0))
         self.session: Optional[aiohttp.ClientSession] = None
         self.logger = logging.getLogger(__name__)
         self.seen_vacancy_ids: Set[str] = set()
@@ -220,9 +234,12 @@ class HHAPIParser:
     async def __aenter__(self):
         """Async context manager entry."""
         self.session = aiohttp.ClientSession(
-            timeout=aiohttp.ClientTimeout(total=60, connect=30),  # Increased timeouts
+            timeout=aiohttp.ClientTimeout(total=60,
+                                          connect=30),  # Increased timeouts
             headers={'Content-Type': 'application/json'},
-            connector=aiohttp.TCPConnector(limit=10, limit_per_host=5)  # Limit concurrent connections
+            connector=aiohttp.
+            TCPConnector(limit=10,
+                         limit_per_host=5)  # Limit concurrent connections
         )
         return self
 
@@ -248,7 +265,8 @@ class HHAPIParser:
     ) -> Dict[str, Any]:
         """Make authenticated request to HH API with enhanced retry logic."""
         if not self.session:
-            raise HHAPIError("Session not initialized. Use async context manager.")
+            raise HHAPIError("Session not initialized. "
+                             "Use async context manager.")
 
         await self.rate_limiter.acquire()
 
@@ -265,8 +283,10 @@ class HHAPIParser:
                 # Enhanced handling of rate limit responses
                 if response.status == 429:
                     self.rate_limiter.record_429_error()
-                    retry_after = int(response.headers.get('Retry-After', 120))  # Default 2 min
-                    self.logger.warning(f"Rate limit exceeded (429). Waiting {retry_after}s")
+                    retry_after = int(response.headers.
+                                      get('Retry-After', 120))  # Default 2 min
+                    self.logger.warning(f"Rate limit exceeded (429). "
+                                        f"Waiting {retry_after}s")
                     await asyncio.sleep(retry_after)
                     raise HHRateLimitError("Rate limit exceeded")
 
@@ -274,13 +294,16 @@ class HHAPIParser:
                 if response.status == 403:
                     print(response.text)
                     self.rate_limiter.record_429_error()
-                    self.logger.warning("Got 403 error, treating as rate limit. Waiting 60s")
+                    self.logger.warning("Got 403 error, "
+                                        "treating as rate limit. Waiting 60s")
                     await asyncio.sleep(60)  # Wait 1 minute for 403
-                    raise HHRateLimitError("Access forbidden (treating as rate limit)")
+                    raise HHRateLimitError("Access forbidden "
+                                           "(treating as rate limit)")
 
                 # Handle 500+ errors with longer backoff
                 if response.status >= 500:
-                    self.logger.warning(f"Server error {response.status}, will retry")
+                    self.logger.warning(f"Server error "
+                                        f"{response.status}, will retry")
                     await asyncio.sleep(10)  # Wait before retry
                     raise HHAPIError(f"Server error: {response.status}")
 
@@ -288,8 +311,10 @@ class HHAPIParser:
                     raise HHAuthenticationError("Authentication failed")
 
                 if response.status >= 400:
-                    error_data = await response.json() if response.content_type == 'application/json' else {}
-                    error_msg = error_data.get('description', f'HTTP {response.status}')
+                    error_data = await response.json() if \
+                        response.content_type == 'application/json' else {}
+                    error_msg = error_data.get(
+                        'description', f'HTTP {response.status}')
                     raise HHAPIError(f"API request failed: {error_msg}")
 
                 return await response.json()
@@ -309,14 +334,18 @@ class HHAPIParser:
             current_time = time.time()
 
             # Log stats every 100 requests
-            if self.request_count % 100 == 0 or (current_time - self.last_stats_log) > 300:
+            if (self.request_count % 100 == 0 or
+                    (current_time - self.last_stats_log) > 300):
                 elapsed = current_time - self.start_time
                 rate = self.request_count / elapsed if elapsed > 0 else 0
-                self.logger.info(f"Request stats: {self.request_count} requests, {rate:.2f} req/s average")
+                self.logger.info(f"Request stats: {self.request_count} "
+                                 f"requests, {rate:.2f} req/s average")
                 self.last_stats_log = current_time
 
-    def _create_filter_combinations(self, base_filters: VacancyFilters) -> List[VacancyFilters]:
-        """Create all possible filter combinations for comprehensive coverage."""
+    def _create_filter_combinations(
+            self, base_filters: VacancyFilters) -> List[VacancyFilters]:
+        """Create all possible filter combinations
+        for comprehensive coverage."""
         combinations = []
 
         # Base combination
@@ -361,7 +390,8 @@ class HHAPIParser:
         current_days = initial_days
 
         while current_start < date_to:
-            current_end = min(current_start + timedelta(days=current_days), date_to)
+            current_end = min(current_start + timedelta(
+                days=current_days), date_to)
             ranges.append((current_start, current_end))
             current_start = current_end + timedelta(seconds=1)  # Avoid overlap
 
@@ -371,7 +401,8 @@ class HHAPIParser:
 
         return ranges
 
-    async def _search_vacancies_page(self, filters: VacancyFilters, page: int = 0) -> Dict[str, Any]:
+    async def _search_vacancies_page(
+            self, filters: VacancyFilters, page: int = 0) -> Dict[str, Any]:
         """Search vacancies for a specific page."""
         params = {
             'page': page,
@@ -400,7 +431,8 @@ class HHAPIParser:
         if filters.only_with_salary:
             params['only_with_salary'] = 'true'
         if filters.date_from:
-            params['date_from'] = filters.date_from.strftime('%Y-%m-%dT%H:%M:%S')
+            params['date_from'] = filters.date_from.strftime(
+                '%Y-%m-%dT%H:%M:%S')
         if filters.date_to:
             params['date_to'] = filters.date_to.strftime('%Y-%m-%dT%H:%M:%S')
 
@@ -431,7 +463,8 @@ class HHAPIParser:
 
         return salary_type_id, currency, salary_value
 
-    def _map_experience_to_category(self, experience_data: Optional[Dict]) -> Optional[int]:
+    def _map_experience_to_category(
+            self, experience_data: Optional[Dict]) -> Optional[int]:
         """Map HH experience to category ID."""
         if not experience_data:
             return None
@@ -445,25 +478,28 @@ class HHAPIParser:
         }
         return mapping.get(exp_id)
 
-    async def _convert_to_vacancy_record(self, vacancy_data: Dict, source_id: int = 1) -> VacancyRecord:
+    async def _convert_to_vacancy_record(
+            self, vacancy_data: Dict, source_id: int = 1) -> VacancyRecord:
         """Convert HH API vacancy data to structured VacancyRecord."""
         # Extract salary information
-        salary_type_id, salary_currency, salary_value = self._extract_salary_info(
-            vacancy_data.get('salary')
-        )
+        salary_type_id, salary_currency, salary_value = self.\
+            _extract_salary_info(vacancy_data.get('salary'))
 
         # Get full vacancy details for description and contacts
         try:
             full_vacancy = await self.get_vacancy_details(vacancy_data['id'])
             description = full_vacancy.get('description', '')
-            contacts = json.dumps(full_vacancy.get('contacts')) if full_vacancy.get('contacts') else None
-
+            contacts = json.dumps(
+                full_vacancy.get('contacts')) if full_vacancy.get(
+                'contacts') else None
             # Add small delay after getting details to prevent rate limiting
             await asyncio.sleep(0.2)  # 200ms delay after detail requests
 
         except Exception as e:
-            self.logger.warning(f"Could not fetch full details for vacancy {vacancy_data['id']}: {e}")
-            description = vacancy_data.get('snippet', {}).get('requirement', '')
+            self.logger.warning(f"Could not fetch full details "
+                                f"for vacancy {vacancy_data['id']}: {e}")
+            description = vacancy_data.get('snippet', {}).get(
+                'requirement', '')
             contacts = None
 
         return VacancyRecord(
@@ -476,9 +512,11 @@ class HHAPIParser:
             salary_type_id=salary_type_id,
             salary_currency=salary_currency,
             salary_value=salary_value,
-            experience_category_id=self._map_experience_to_category(vacancy_data.get('experience')),
+            experience_category_id=self._map_experience_to_category(
+                vacancy_data.get('experience')),
             location_id=None,  # Would need separate location mapping
-            specialization_id=vacancy_data.get('professional_roles', [{}])[0].get('id') if vacancy_data.get(
+            specialization_id=vacancy_data.get(
+                'professional_roles', [{}])[0].get('id') if vacancy_data.get(
                 'professional_roles') else None,
             published_at=vacancy_data.get('published_at'),
             contacts=contacts,
@@ -523,7 +561,8 @@ class HHAPIParser:
                         yield record
                         results_count += 1
 
-                if (page + 1) * self.MAX_RESULTS_PER_REQUEST >= min(total_found, self.MAX_TOTAL_RESULTS):
+                if ((page + 1) * self.MAX_RESULTS_PER_REQUEST
+                        >= min(total_found, self.MAX_TOTAL_RESULTS)):
                     break
                 page += 1
         else:
@@ -531,7 +570,8 @@ class HHAPIParser:
             self.logger.info("Using aggressive splitting strategy")
 
             # First try date-based splitting
-            date_ranges = self._split_date_range_aggressive(filters.date_from, filters.date_to)
+            date_ranges = self._split_date_range_aggressive(
+                filters.date_from, filters.date_to)
 
             for date_from, date_to in date_ranges:
                 if results_count >= max_results:
@@ -542,14 +582,16 @@ class HHAPIParser:
                 date_filters.date_to = date_to
 
                 # Check if this date range still has too many results
-                date_response = await self._search_vacancies_page(date_filters, 0)
+                date_response = await self._search_vacancies_page(
+                    date_filters, 0)
                 date_total = date_response.get('found', 0)
 
                 if date_total <= self.MAX_TOTAL_RESULTS:
                     # Process this date range normally
                     page = 0
                     while results_count < max_results:
-                        response = await self._search_vacancies_page(date_filters, page)
+                        response = await self._search_vacancies_page(
+                            date_filters, page)
                         vacancies = response.get('items', [])
                         if not vacancies:
                             break
@@ -559,19 +601,23 @@ class HHAPIParser:
                                 return
                             if vacancy['id'] not in self.seen_vacancy_ids:
                                 self.seen_vacancy_ids.add(vacancy['id'])
-                                record = await self._convert_to_vacancy_record(vacancy)
+                                record = await self.\
+                                    _convert_to_vacancy_record(vacancy)
                                 yield record
                                 results_count += 1
 
-                        if (page + 1) * self.MAX_RESULTS_PER_REQUEST >= min(date_total, self.MAX_TOTAL_RESULTS):
+                        if ((page + 1) * self.MAX_RESULTS_PER_REQUEST
+                                >= min(date_total, self.MAX_TOTAL_RESULTS)):
                             break
                         page += 1
                 else:
                     # Need parameter-based splitting
                     self.logger.info(
-                        f"Date range {date_from} to {date_to} still has {date_total} results, using parameter splitting")
+                        f"Date range {date_from} to {date_to} still has "
+                        f"{date_total} results, using parameter splitting")
 
-                    filter_combinations = self._create_filter_combinations(date_filters)
+                    filter_combinations = self._create_filter_combinations(
+                        date_filters)
 
                     for combo_filters in filter_combinations:
                         if results_count >= max_results:
@@ -580,7 +626,8 @@ class HHAPIParser:
                         try:
                             page = 0
                             while results_count < max_results:
-                                response = await self._search_vacancies_page(combo_filters, page)
+                                response = await self.\
+                                    _search_vacancies_page(combo_filters, page)
                                 vacancies = response.get('items', [])
                                 if not vacancies:
                                     break
@@ -588,20 +635,25 @@ class HHAPIParser:
                                 for vacancy in vacancies:
                                     if results_count >= max_results:
                                         return
-                                    if vacancy['id'] not in self.seen_vacancy_ids:
-                                        self.seen_vacancy_ids.add(vacancy['id'])
-                                        record = await self._convert_to_vacancy_record(vacancy)
+                                    if (vacancy['id'] not in
+                                            self.seen_vacancy_ids):
+                                        self.seen_vacancy_ids.add(
+                                            vacancy['id'])
+                                        record = await self.\
+                                            _convert_to_vacancy_record(vacancy)
                                         yield record
                                         results_count += 1
 
                                 combo_total = response.get('found', 0)
-                                if (page + 1) * self.MAX_RESULTS_PER_REQUEST >= min(combo_total,
-                                                                                    self.MAX_TOTAL_RESULTS):
+                                if ((page + 1) * self.MAX_RESULTS_PER_REQUEST
+                                        >= min(combo_total,
+                                               self.MAX_TOTAL_RESULTS)):
                                     break
                                 page += 1
 
                         except Exception as e:
-                            self.logger.error(f"Error with filter combination: {e}")
+                            self.logger.error(f"Error with "
+                                              f"filter combination: {e}")
                             continue
 
     async def get_vacancy_details(self, vacancy_id: str) -> Dict[str, Any]:
@@ -615,14 +667,16 @@ async def parse_and_save_vacancies_json(
         max_results_per_role: Optional[int] = None,
         delay_between_roles: int = 10  # Increased default delay
 ):
-    """Parse vacancies for multiple professional roles and save to JSON with enhanced rate limiting."""
+    """Parse vacancies for multiple professional roles
+    and save to JSON with enhanced rate limiting."""
 
     # Get credentials from environment variables
     client_id = os.getenv('HH_CLIENT_ID')
     client_secret = os.getenv('HH_CLIENT_SECRET')
 
     if not client_id or not client_secret:
-        raise ValueError("HH_CLIENT_ID and HH_CLIENT_SECRET environment variables must be set")
+        raise ValueError("HH_CLIENT_ID and HH_CLIENT_SECRET "
+                         "environment variables must be set")
 
     parser = HHAPIParser(
         client_id=client_id,
@@ -636,7 +690,8 @@ async def parse_and_save_vacancies_json(
     async with parser:
         for i, role_id in enumerate(professional_roles):
             try:
-                logging.info(f"Processing role {i + 1}/{len(professional_roles)}: {role_id}")
+                logging.info(f"Processing role {i + 1}/"
+                             f"{len(professional_roles)}: {role_id}")
 
                 filters = VacancyFilters(
                     professional_role=role_id,
@@ -647,14 +702,19 @@ async def parse_and_save_vacancies_json(
                 role_vacancies = []
                 role_start_time = time.time()
 
-                async for vacancy_record in parser.search_all_vacancies(filters, max_results_per_role):
+                async for vacancy_record in parser.search_all_vacancies(
+                        filters, max_results_per_role):
                     role_vacancies.append(vacancy_record.to_dict())
 
                 all_vacancies.extend(role_vacancies)
 
                 role_elapsed = time.time() - role_start_time
-                logging.info(f"Role {role_id} completed: {len(role_vacancies)} vacancies in {role_elapsed:.1f}s")
-                logging.info(f"Total progress: {len(all_vacancies)} vacancies, {len(parser.seen_vacancy_ids)} unique")
+                logging.info(f"Role {role_id} completed: "
+                             f"{len(role_vacancies)}"
+                             f" vacancies in {role_elapsed:.1f}s")
+                logging.info(f"Total progress: "
+                             f"{len(all_vacancies)} vacancies, "
+                             f"{len(parser.seen_vacancy_ids)} unique")
 
                 # Adaptive delay based on performance
                 if role_elapsed < 30:  # If too fast, increase delay
@@ -677,7 +737,7 @@ async def parse_and_save_vacancies_json(
     total_elapsed = time.time() - start_time
     avg_rate = parser.request_count / total_elapsed if total_elapsed > 0 else 0
 
-    logging.info(f"=== PARSING COMPLETED ===")
+    logging.info("=== PARSING COMPLETED ===")
     logging.info(f"Total time: {total_elapsed / 3600:.1f} hours")
     logging.info(f"Total requests: {parser.request_count}")
     logging.info(f"Average rate: {avg_rate:.2f} req/s")
@@ -709,7 +769,8 @@ if __name__ == "__main__":
         ]
     )
 
-    test_roles = [44, 45, 46, 48, 144, 169, 174, 30, 47, 111, 112, 114, 96, 124]  # Engineer roles
+    test_roles = [44, 45, 46, 48, 144, 169, 174,
+                  30, 47, 111, 112, 114, 96, 124]  # Engineer roles
 
     # Test run
     asyncio.run(parse_and_save_vacancies_json(
