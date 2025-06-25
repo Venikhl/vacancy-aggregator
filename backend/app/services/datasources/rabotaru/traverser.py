@@ -7,19 +7,11 @@ from bs4 import BeautifulSoup
 from pydantic import BaseModel
 
 from app.api.v1.models import Salary, VacancyShort
+from backend.app.services.datasources.rabotaru._api import _fetch
 
 
 class VacancyShortWithUrl(VacancyShort):
     url: str
-
-
-UA = "Mozilla/5.0"
-
-
-async def _fetch(session: aiohttp.ClientSession, url: str) -> str:
-    async with session.get(url, headers={"User-Agent": UA}, timeout=30) as rsp:
-        rsp.raise_for_status()
-        return await rsp.text()
 
 
 def _build_url(
