@@ -19,16 +19,16 @@ from app.services.datasources.rabotaru.traverser import VacancyShortWithUrl
 SOURCE = "rabota.ru"
 
 
-async def parse_vacancy(short: VacancyShort) -> Vacancy:
+async def parse_vacancy(short: VacancyShort, url: str | None = None) -> Vacancy:
     if isinstance(short, VacancyShortWithUrl):
         url = short.url
-    else:
-        url = None
+    elif url is None:
+        raise TypeError("No url")
 
     async with aiohttp.ClientSession(
         connector=aiohttp.TCPConnector(ssl=False)
     ) as session:  # rabota uses TLS-ALPN
-        html = await _fetch(session, "https://www.rabota.ru/vacancy/48832235/")
+        html = await _fetch(session, url)
 
     description = extract_markdown_description(html)
     region = extract_city_name(html)
