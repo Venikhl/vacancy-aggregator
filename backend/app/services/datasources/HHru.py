@@ -1,3 +1,9 @@
+"""Enhanced HH.ru API parser with comprehensive vacancy collection options.
+
+This module provides tools to search and parse job vacancies from HH.ru API,
+with advanced rate limiting, error handling, and data processing features.
+"""
+
 import asyncio
 import logging
 import json
@@ -19,6 +25,7 @@ load_dotenv()
 # Configuration and Models
 class ExperienceLevel(str, Enum):
     """Experience level enumeration."""
+
     NO_EXPERIENCE = "noExperience"
     BETWEEN_1_AND_3 = "between1And3"
     BETWEEN_3_AND_6 = "between3And6"
@@ -27,6 +34,7 @@ class ExperienceLevel(str, Enum):
 
 class EmploymentType(str, Enum):
     """Employment type enumeration."""
+
     FULL = "full"
     PART = "part"
     PROJECT = "project"
@@ -36,6 +44,7 @@ class EmploymentType(str, Enum):
 
 class ScheduleType(str, Enum):
     """Schedule type enumeration."""
+
     FULL_DAY = "fullDay"
     SHIFT = "shift"
     FLEXIBLE = "flexible"
@@ -45,6 +54,7 @@ class ScheduleType(str, Enum):
 
 class VacancyFilters(BaseModel):
     """Vacancy search filters model."""
+
     text: Optional[str] = Field(None, description="Search text")
     area: Optional[int] = Field(
         None, description="Area ID (e.g., 1 for Moscow)")
@@ -81,6 +91,7 @@ class VacancyFilters(BaseModel):
 @dataclass
 class VacancyRecord:
     """Structured vacancy record for JSON output."""
+
     vacancy_id: Optional[int]
     external_id: str
     source_id: int
@@ -121,6 +132,7 @@ class VacancyRecord:
 @dataclass
 class RateLimiter:
     """Enhanced rate limiter for API requests with stricter control."""
+
     max_requests_per_second: float = 2.0  # Conservative limit
     max_requests_per_minute: int = 100  # Additional minute-based limit
     _requests: List[float] = field(default_factory=list)
@@ -181,16 +193,19 @@ class RateLimiter:
 
 class HHAPIError(Exception):
     """Base exception for HH API errors."""
+
     pass
 
 
 class HHRateLimitError(HHAPIError):
     """Exception raised when rate limit is exceeded."""
+
     pass
 
 
 class HHAuthenticationError(HHAPIError):
     """Exception raised for authentication errors."""
+
     pass
 
 
@@ -344,8 +359,7 @@ class HHAPIParser:
 
     def _create_filter_combinations(
             self, base_filters: VacancyFilters) -> List[VacancyFilters]:
-        """Create all possible filter combinations
-        for comprehensive coverage."""
+        """Create all possible filter combinations for coverage."""
         combinations = []
 
         # Base combination
@@ -667,9 +681,7 @@ async def parse_and_save_vacancies_json(
         max_results_per_role: Optional[int] = None,
         delay_between_roles: int = 10  # Increased default delay
 ):
-    """Parse vacancies for multiple professional roles
-    and save to JSON with enhanced rate limiting."""
-
+    """Parse vacancies for multiple professional roles and save to JSON."""
     # Get credentials from environment variables
     client_id = os.getenv('HH_CLIENT_ID')
     client_secret = os.getenv('HH_CLIENT_SECRET')
