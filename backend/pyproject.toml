@@ -14,6 +14,10 @@ dependencies = [
     "python-jose>=3.5.0",
     "sqlalchemy[asyncio]>=2.0.41",
     "uvicorn>=0.34.3",
+    "requests>=2.31.0",
+    "beautifulsoup4>=4.12",
+    "lxml",
+    "aiohttp>=3.12.13"
 ]
 
 [dependency-groups]
