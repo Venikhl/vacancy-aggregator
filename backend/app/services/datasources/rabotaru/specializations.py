@@ -1,3 +1,5 @@
+"""List of specializations from rabota.ru."""
+
 import json
 from pydantic import BaseModel
 
@@ -61,26 +63,34 @@ IT_SPECIALIZATIONS = [
 
 
 class Specialization(BaseModel):
+    """Specialization."""
+
     id: int
     label: str
 
 
 class Industry(BaseModel):
+    """Industry."""
+
     id: int
     name: str
 
 
 class Catalog(BaseModel):
+    """All data from rabota.ru."""
+
     specializations: list[Specialization]
     industries: list[Industry]
 
 
 def get_catalog() -> Catalog:
+    """Get catalog from a local file."""
     with open(CATALOG_PATH) as file:
         return Catalog(**json.load(file))
 
 
 def get_it_spec_ids() -> list[int]:
+    """Get IT specs based on a local file."""
     catalog = get_catalog()
     result: list[int] = []
     for spec in catalog.specializations:

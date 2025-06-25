@@ -1,3 +1,26 @@
+"""
+Parser for extracting structured vacancy data from rabota.ru HTML pages.
+
+This module provides an async interface `parse_vacancy` that transforms a
+vacancy page
+into a structured `Vacancy` object suitable for database insertion or API
+usage.
+
+It extracts:
+- Description (converted to Markdown)
+- Required skills
+- Company name
+- City (location)
+- Employment type, experience, and education requirements
+- Publication date
+- Contact information (not implemented)
+
+Notes:
+- HTML is fetched using aiohttp with disabled SSL verification.
+- Rabota.ru hides some contact details behind JavaScript; those are not scraped
+here.
+"""
+
 from bs4 import BeautifulSoup, NavigableString
 import re
 import aiohttp
@@ -22,6 +45,7 @@ SOURCE = "rabota.ru"
 async def parse_vacancy(
     short: VacancyShort, url: str | None = None
 ) -> Vacancy:
+    """Parse full vacancy details from a given short vacancy object and URL."""
     if isinstance(short, VacancyShortWithUrl):
         url = short.url
     elif url is None:
@@ -69,6 +93,7 @@ async def parse_vacancy(
 
 
 def extract_markdown_description(html: str) -> str:
+    """Extract and convert the vacancy description into markdown format."""
     soup = BeautifulSoup(html, "lxml")
     description_div = soup.find("div", itemprop="description")
 
@@ -97,6 +122,7 @@ def extract_markdown_description(html: str) -> str:
 
 
 def extract_required_skills(html: str) -> list[str]:
+    """Extract a list of required skills from the HTML."""
     soup = BeautifulSoup(html, "lxml")
 
     skills_container = soup.find("div", class_="vacancy-card__skills-list")
@@ -114,6 +140,7 @@ def extract_required_skills(html: str) -> list[str]:
 
 
 def skills_to_markdown(skills: list[str] | None) -> str:
+    """Convert a list of skills into a markdown-formatted list."""
     if not skills:
         return ""
     md = "### Необходимые навыки:\n"
@@ -123,8 +150,12 @@ def skills_to_markdown(skills: list[str] | None) -> str:
 
 
 def extract_company_name(html: str) -> str | None:
-    """Extract company name from <a> tag inside
-    div class="vacancy-company-stats__name">."""
+    """
+    Extract company name.
+
+    Extract company name from <a> tag inside
+    div class="vacancy-company-stats__name">.
+    """
     soup = BeautifulSoup(html, "lxml")
     div = soup.find("div", class_="vacancy-company-stats__name")
     if not div:
@@ -143,7 +174,8 @@ def extract_city_name(html: str) -> str | None:
 
 def _extract_additional_requirements(html: str) -> str | None:
     """
-    Extract additional requirements text that follows
+    Extract additional requirements text that follows.
+
     <span class="vacancy-requirements__city"> in the same parent.
     """
     soup = BeautifulSoup(html, "lxml")
@@ -158,6 +190,7 @@ def _extract_additional_requirements(html: str) -> str | None:
 def extract_experience_education_employment(
     html: str,
 ) -> tuple[str | None, str | None, str | None]:
+    """Extract experience, education, and employment type from HTML."""
     req = _extract_additional_requirements(html)
 
     experience = education = employment = None
@@ -174,7 +207,9 @@ def extract_experience_education_employment(
             education = education
 
         # never seen this but what if
-        case singe_string, :
+        case [
+            singe_string,
+        ]:
             if "опыт" in singe_string:
                 experience = singe_string
             if "образование" in singe_string:
@@ -187,9 +222,10 @@ def extract_experience_education_employment(
 
 def extract_address(html: str) -> str | None:
     """
+    Extract address.
+
     Extract text from
     <div itemprop="address" class="vacancy-locations__address">,
-
     excluding child elements like .vacancy-locations__stations.
     """
     soup = BeautifulSoup(html, "lxml")
@@ -209,6 +245,8 @@ def extract_address(html: str) -> str | None:
 
 def extract_date(html: str) -> str | None:
     """
+    Extract date timestamp.
+
     Extract date from <span class="vacancy-system-info__updated-date">.
     Prefer <meta itemprop="datePosted"> if available,
     else take the second <span>.
@@ -230,6 +268,7 @@ def extract_date(html: str) -> str | None:
 
 
 def parse_vacancy_phones(html: str) -> str:
+    """Parse and return contact phone numbers from vacancy HTML."""
     raise NotImplementedError
 
     # need to click, without clicking this return empty string

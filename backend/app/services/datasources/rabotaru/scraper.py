@@ -46,7 +46,11 @@ async def collect_vacancies(
     limit: int,
     concurrency: int,
 ) -> List[Vacancy]:
-    """Run the whole pipeline: traverse → fetch full vacancy pages → collect"""
+    """
+    Run the whole pipeline.
+
+    traverse → fetch full vacancy pages → collect.
+    """
     print(f"Traversing Rabota.ru for up to {limit} vacancies …")
     previews: List[VacancyShortWithUrl] = await traverse(limit=limit)
     print(f"Found {len(previews)} previews, downloading full pages …")
@@ -75,6 +79,7 @@ def save_as_json(vacancies: List[Vacancy], outfile: Path) -> None:
 # CLI
 # --------------------------------------------------------------------------- #
 def parse_args() -> argparse.Namespace:
+    """Parse arguments in CLI run."""
     parser = argparse.ArgumentParser(
         description="Export vacancies from Rabota.ru"
     )
@@ -101,6 +106,7 @@ def parse_args() -> argparse.Namespace:
 
 
 async def main() -> None:
+    """Run traverser and parser."""
     args = parse_args()
     vacancies = await collect_vacancies(
         limit=args.limit,

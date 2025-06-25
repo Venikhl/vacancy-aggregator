@@ -1,3 +1,5 @@
+"""Traversal and parsing logic for rabota.ru vacancy listings."""
+
 import re
 from typing import Iterable, List, Optional
 from urllib.parse import urljoin, urlparse
@@ -10,6 +12,8 @@ from app.services.datasources.rabotaru._api import _fetch
 
 
 class VacancyShortWithUrl(VacancyShort):
+    """Extension of VacancyShort model with URL field."""
+
     url: str
 
 
@@ -35,7 +39,7 @@ def _build_url(
 
 
 def _parse_salary(raw: str) -> Salary:
-    """Parse string with salary from a div from a search page"""
+    """Parse string with salary from a div from a search page."""
     raw = raw.strip()
 
     # “От 80 тыс рублей” → value = 80 000 * 100 = 8 000 000
@@ -60,9 +64,9 @@ def _parse_salary(raw: str) -> Salary:
 def parse_vacancies(
     html: str, base_url: str = "https://www.rabota.ru"
 ) -> list[VacancyShort]:
-    """
-    Parse a rabota.ru vacancy search HTML page and extract top-level
-    vacancy data.
+    """Parse a rabota.ru vacancy.
+
+    Search HTML page and extract top-level vacancy data.
 
     Extracted fields per vacancy:
     - ID: parsed from the numeric part of the <a href> link
@@ -80,7 +84,6 @@ def parse_vacancies(
         A list of `VacancyShortWithUrl` models parsed from the page.
         Returns an empty list if no valid vacancies are found.
     """
-
     soup = BeautifulSoup(html, "lxml")
     out: list[VacancyShortWithUrl] = []
 
@@ -133,14 +136,15 @@ async def traverse(
     page_limit: int = 10,  # max pages to walk
 ) -> List[VacancyShortWithUrl]:
     """
-    Crawl rabota.ru search pages sequentially (async I/O) and
-    return up to *limit* VacancyShort objects.
+    Crawl rabota.ru.
+
+    Search pages sequentially (async I/O) and return up to *limit*
+    VacancyShort objects.
 
     Stops earlier if an empty result page is met.
 
-    Stops earlier if exceeded the limit. May return list bigger than limit
+    Stops earlier if exceeded the limit. May return list bigger than limit.
     """
-
     vacancies: list[VacancyShortWithUrl] = []
     if limit is not None and limit <= 0:
         return vacancies
