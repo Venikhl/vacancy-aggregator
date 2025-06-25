@@ -1,4 +1,5 @@
-"""SuperJob API integration for fetching and processing job vacancy data asynchronously."""
+"""SuperJob API integration for fetching and processing job vacancy
+data asynchronously."""
 
 import asyncio
 import json
@@ -27,8 +28,10 @@ catalog_dict = {
 
 default_catalogs = "33,35,66,71,427,433,276,626,329,336,347,351,481"
 
+
 class SuperJobParser:
-    """Class to handle asynchronous SuperJob API interactions and data processing."""
+    """Class to handle asynchronous SuperJob API
+    interactions and data processing."""
 
     def __init__(self):
         """Initialize the parser with an httpx AsyncClient and headers."""
@@ -63,32 +66,39 @@ class SuperJobParser:
             "catalogues": default_catalogs,
             "count": 40,
         }
-        response = await self.client.get(url, headers=self.headers, params=params)
+        response = await self.client.get(url, headers=self.headers,
+                                         params=params)
         json_data = response.json()
         results = [json_data]
         total = json_data["total"]
         amount = total // 40
         for i in range(1, amount + 1):
             params["page"] = i
-            response = await self.client.get(url, headers=self.headers, params=params)
+            response = await self.client.get(url, headers=self.headers,
+                                             params=params)
             json_data = response.json()
             results.append(json_data)
-        async with aiofiles.open("all_vacancy_catalog.json", "w", encoding="utf-8") as file:
+        async with aiofiles.open("all_vacancy_catalog.json", "w",
+                                 encoding="utf-8") as file:
             await file.write(json.dumps(results, ensure_ascii=False, indent=4))
             await file.write("\n")
 
     async def extract_data(self):
         """Load and return vacancy data from the saved JSON file."""
-        async with aiofiles.open("all_vacancy_catalog.json", "r", encoding="utf-8") as file:
+        async with aiofiles.open("all_vacancy_catalog.json", "r",
+                                 encoding="utf-8") as file:
             content = await file.read()
             return json.loads(content)
 
-    async def create_json_file(self, name: str, response: httpx.Response, mode: str = "a"):
+    async def create_json_file(self, name: str,
+                               response: httpx.Response, mode: str = "a"):
         """Write the JSON response content to a file asynchronously."""
         json_content = response.json()
         full_path = os.path.join(script_dir, name)
-        async with aiofiles.open(full_path, mode, encoding="utf-8") as json_file:
-            await json_file.write(json.dumps(json_content, ensure_ascii=False, indent=4))
+        async with aiofiles.open(full_path, mode,
+                                 encoding="utf-8") as json_file:
+            await json_file.write(json.dumps(json_content,
+                                             ensure_ascii=False, indent=4))
 
     async def find_vacancies(
         self,
@@ -115,7 +125,8 @@ class SuperJobParser:
             "payment_from": payment_from,
             "payment_to": payment_to,
         }
-        response = await self.client.get(url, headers=self.headers, params=params)
+        response = await self.client.get(url, headers=self.headers,
+                                         params=params)
         await self.create_json_file("response.json", response)
         return response.json()
 
@@ -141,8 +152,11 @@ class SuperJobParser:
                     "positions": positions,
                 }
             )
-        async with aiofiles.open("cleaned_catalog.json", "w", encoding="utf-8") as json_file:
-            await json_file.write(json.dumps(parsed_cleaned, ensure_ascii=False, indent=4))
+        async with aiofiles.open("cleaned_catalog.json",
+                                 "w", encoding="utf-8") as json_file:
+            await json_file.write(json.dumps(parsed_cleaned,
+                                             ensure_ascii=False, indent=4))
+
 
 async def main():
     """Entry point for asynchronous script execution."""
