@@ -33,11 +33,7 @@ default_catalogs = "33,35,66,71,427,433,276,626,329,336,347,351,481"
 
 
 class SuperJobParser:
-    """
-    Class to handle asynchronous SuperJob API.
-    
-    interactions and data processing.
-    """
+    """Handle asynchronous SuperJob API interactions and data processing."""
 
     def __init__(self):
         """Initialize the parser with an httpx AsyncClient and headers."""
