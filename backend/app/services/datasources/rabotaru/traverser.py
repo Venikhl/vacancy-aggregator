@@ -4,7 +4,6 @@ from urllib.parse import urljoin, urlparse
 
 import aiohttp
 from bs4 import BeautifulSoup
-from pydantic import BaseModel
 
 from app.api.v1.models import Salary, VacancyShort
 from app.services.datasources.rabotaru._api import _fetch
@@ -41,7 +40,11 @@ def _parse_salary(raw: str) -> Salary:
 
     # “От 80 тыс рублей” → value = 80 000 * 100 = 8 000 000
     m = re.search(r"(\d[\d\s]*)", raw)
-    amount = int(m.group(1).replace(" ", "").replace("\xa0", "")) * 100 if m else None
+    amount = (
+        int(m.group(1).replace(" ", "").replace("\xa0", "")) * 100
+        if m
+        else None
+    )
 
     return Salary(
         type=(
@@ -58,17 +61,20 @@ def parse_vacancies(
     html: str, base_url: str = "https://www.rabota.ru"
 ) -> list[VacancyShort]:
     """
-    Parse a rabota.ru vacancy search HTML page and extract top-level vacancy data.
+    Parse a rabota.ru vacancy search HTML page and extract top-level
+    vacancy data.
 
     Extracted fields per vacancy:
-    - ID: parsed from the numeric part of the <a href> link (e.g., /vacancy/53515632/)
+    - ID: parsed from the numeric part of the <a href> link
+    (e.g., /vacancy/53515632/)
     - Title: vacancy name from the anchor text
-    - Description: short description from the `.vacancy-preview-card__description` div
-    - Salary: parsed from the `.vacancy-preview-card__salary*` div (may vary in class name)
+    - Description: short description from the
+    `.vacancy-preview-card__description` div
+    - Salary: parsed from the `.vacancy-preview-card__salary*` div
 
     Args:
         html: Raw HTML content of a vacancy list page.
-        base_url: Base URL to resolve relative links (used for href normalization).
+        base_url: Base URL to resolve relative links
 
     Returns:
         A list of `VacancyShortWithUrl` models parsed from the page.
@@ -79,7 +85,7 @@ def parse_vacancies(
     out: list[VacancyShortWithUrl] = []
 
     for card in soup.select("div.vacancy-preview-card__top"):
-        # title + link ---------------------------------------------------------
+        # title + link
         a = card.select_one("a.vacancy-preview-card__title_border")
         if not a or not a.get("href"):
             continue  # skip corrupt card
@@ -93,14 +99,16 @@ def parse_vacancies(
             continue
         vac_id = int(parts[1])
 
-        # description ----------------------------------------------------------
+        # description
         desc_tag = card.select_one("div.vacancy-preview-card__description")
         description = desc_tag.get_text(" ", strip=True) if desc_tag else None
 
-        # salary (class name sometimes varies, so prefix match) ----------------
+        # salary (class name sometimes varies, so prefix match)
         sal_tag = card.select_one('[class*="vacancy-preview-card__salary"]')
         salary = (
-            _parse_salary(sal_tag.get_text(" ", strip=True)) if sal_tag else Salary()
+            _parse_salary(sal_tag.get_text(" ", strip=True))
+            if sal_tag
+            else Salary()
         )
 
         out.append(

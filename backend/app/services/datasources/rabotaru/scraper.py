@@ -2,11 +2,12 @@
 Traverse Rabota.ru, download vacancies, and save them as JSON.
 
 Usage examples:
-    python -m app.services.datasources.rabotaru.scraper # default 100 vacancies -> vacancies.json
+    python -m app.services.datasources.rabotaru.scraper # default 100 vacancies
+      -> vacancies.json
 
     python -m app.services.datasources.rabotaru.scraper --limit 500 \
-                                                        --output data/rabota_2025-06-25.json \
-                                                        --concurrency 20
+                               --output data/rabota_2025-06-25.json \
+                               --concurrency 20
 """
 
 import argparse
@@ -45,7 +46,7 @@ async def collect_vacancies(
     limit: int,
     concurrency: int,
 ) -> List[Vacancy]:
-    """Run the whole pipeline: traverse → fetch full vacancy pages → collect."""
+    """Run the whole pipeline: traverse → fetch full vacancy pages → collect"""
     print(f"Traversing Rabota.ru for up to {limit} vacancies …")
     previews: List[VacancyShortWithUrl] = await traverse(limit=limit)
     print(f"Found {len(previews)} previews, downloading full pages …")
@@ -62,7 +63,9 @@ async def collect_vacancies(
 
 def save_as_json(vacancies: List[Vacancy], outfile: Path) -> None:
     """Serialise Pydantic models and write pretty-printed JSON."""
-    data = [v.model_dump() for v in vacancies]  # `.dict()` if using Pydantic v1
+    data = [
+        v.model_dump() for v in vacancies
+    ]  # `.dict()` if using Pydantic v1
     outfile.parent.mkdir(parents=True, exist_ok=True)
     outfile.write_text(json.dumps(data, ensure_ascii=False, indent=2))
     print(f"Wrote {len(vacancies)} vacancies → {outfile.resolve()}")
@@ -72,7 +75,9 @@ def save_as_json(vacancies: List[Vacancy], outfile: Path) -> None:
 # CLI
 # --------------------------------------------------------------------------- #
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Export vacancies from Rabota.ru")
+    parser = argparse.ArgumentParser(
+        description="Export vacancies from Rabota.ru"
+    )
     parser.add_argument(
         "--limit",
         type=int,

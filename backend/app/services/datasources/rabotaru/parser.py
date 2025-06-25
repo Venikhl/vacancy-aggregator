@@ -19,7 +19,9 @@ from app.services.datasources.rabotaru.traverser import VacancyShortWithUrl
 SOURCE = "rabota.ru"
 
 
-async def parse_vacancy(short: VacancyShort, url: str | None = None) -> Vacancy:
+async def parse_vacancy(
+    short: VacancyShort, url: str | None = None
+) -> Vacancy:
     if isinstance(short, VacancyShortWithUrl):
         url = short.url
     elif url is None:
@@ -34,7 +36,9 @@ async def parse_vacancy(short: VacancyShort, url: str | None = None) -> Vacancy:
     region = extract_city_name(html)
     company = extract_company_name(html)
     time_stamp = extract_date(html)
-    experience, education, employment = extract_experience_education_employment(html)
+    experience, education, employment = (
+        extract_experience_education_employment(html)
+    )
 
     if education:
         description = education + "\n\n" + description
@@ -47,10 +51,14 @@ async def parse_vacancy(short: VacancyShort, url: str | None = None) -> Vacancy:
         description=description,
         company=Company(name=company) if company else None,
         salary=short.salary,
-        experience_category=ExperienceCategory(name=experience) if experience else None,
+        experience_category=(
+            ExperienceCategory(name=experience) if experience else None
+        ),
         location=Location(region=region) if region else None,
         specialization=None,
-        employment_types=[EmploymentType(name=employment)] if employment else [],
+        employment_types=(
+            [EmploymentType(name=employment)] if employment else []
+        ),
         published_at=TimeStamp(time_stamp=time_stamp) if time_stamp else None,
         contacts=None,
         url=url,
@@ -97,7 +105,9 @@ def extract_required_skills(html: str) -> list[str]:
 
     skills = [
         item.get_text(strip=True)
-        for item in skills_container.find_all("div", class_="vacancy-card__skills-item")
+        for item in skills_container.find_all(
+            "div", class_="vacancy-card__skills-item"
+        )
     ]
 
     return skills
@@ -113,7 +123,8 @@ def skills_to_markdown(skills: list[str] | None) -> str:
 
 
 def extract_company_name(html: str) -> str | None:
-    """Extract company name from <a> tag inside <div class="vacancy-company-stats__name">."""
+    """Extract company name from <a> tag inside
+    div class="vacancy-company-stats__name">."""
     soup = BeautifulSoup(html, "lxml")
     div = soup.find("div", class_="vacancy-company-stats__name")
     if not div:
@@ -156,14 +167,14 @@ def extract_experience_education_employment(
         case experience, education:
             experience = experience
             education = education
-        # полный день, опыт работы от 3 лет, образование среднее профессиональное
+        # полный день, опыт работы от 3 лет, образование среднее
         case employment, experience, education:
             employment = employment
             experience = experience
             education = education
 
         # never seen this but what if
-        case singe_string,:
+        case singe_string, :
             if "опыт" in singe_string:
                 experience = singe_string
             if "образование" in singe_string:
@@ -176,7 +187,9 @@ def extract_experience_education_employment(
 
 def extract_address(html: str) -> str | None:
     """
-    Extract text from <div itemprop="address" class="vacancy-locations__address">,
+    Extract text from
+    <div itemprop="address" class="vacancy-locations__address">,
+
     excluding child elements like .vacancy-locations__stations.
     """
     soup = BeautifulSoup(html, "lxml")
@@ -197,7 +210,8 @@ def extract_address(html: str) -> str | None:
 def extract_date(html: str) -> str | None:
     """
     Extract date from <span class="vacancy-system-info__updated-date">.
-    Prefer <meta itemprop="datePosted"> if available, else take the second <span>.
+    Prefer <meta itemprop="datePosted"> if available,
+    else take the second <span>.
     """
     soup = BeautifulSoup(html, "lxml")
     wrapper = soup.find("span", class_="vacancy-system-info__updated-date")
