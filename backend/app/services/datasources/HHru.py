@@ -52,6 +52,123 @@ class ScheduleType(str, Enum):
     FLY_IN_FLY_OUT = "flyInFlyOut"
 
 
+# Target model structures (assuming these are imported from elsewhere)
+@dataclass
+class Source:
+    """Source information."""
+
+    id: int
+    name: str
+
+
+@dataclass
+class Company:
+    """Company information."""
+
+    id: int
+    name: str
+
+
+@dataclass
+class Salary:
+    """Salary information."""
+
+    type_id: Optional[int] = None
+    currency: Optional[str] = None
+    value: Optional[float] = None
+
+
+@dataclass
+class ExperienceCategory:
+    """Experience category."""
+
+    id: int
+    name: str
+
+
+@dataclass
+class Location:
+    """Location information."""
+
+    id: int
+    name: str
+
+
+@dataclass
+class Specialization:
+    """Specialization information."""
+
+    id: int
+    name: str
+
+
+@dataclass
+class TimeStamp:
+    """Timestamp wrapper."""
+
+    value: str
+
+
+@dataclass
+class Vacancy:
+    """Complete representation of vacancy matching the target model."""
+
+    id: int
+    external_id: str
+    source: Optional[Source] = None
+    title: str = ""
+    description: Optional[str] = None
+    company: Optional[Company] = None
+    salary: Optional[Salary] = None
+    experience_category: Optional[ExperienceCategory] = None
+    location: Optional[Location] = None
+    specialization: Optional[Specialization] = None
+    employment_types: List[EmploymentType] = field(default_factory=list)
+    published_at: Optional[TimeStamp] = None
+    contacts: Optional[str] = None
+    url: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization."""
+        return {
+            'id': self.id,
+            'external_id': self.external_id,
+            'source': {
+                'id': self.source.id,
+                'name': self.source.name
+            } if self.source else None,
+            'title': self.title,
+            'description': self.description,
+            'company': {
+                'id': self.company.id,
+                'name': self.company.name
+            } if self.company else None,
+            'salary': {
+                'type_id': self.salary.type_id,
+                'currency': self.salary.currency,
+                'value': self.salary.value
+            } if self.salary else None,
+            'experience_category': {
+                'id': self.experience_category.id,
+                'name': self.experience_category.name
+            } if self.experience_category else None,
+            'location': {
+                'id': self.location.id,
+                'name': self.location.name
+            } if self.location else None,
+            'specialization': {
+                'id': self.specialization.id,
+                'name': self.specialization.name
+            } if self.specialization else None,
+            'employment_types': [emp_type.value for emp_type in
+                                 self.employment_types],
+            'published_at': self.published_at.value if
+            self.published_at else None,
+            'contacts': self.contacts,
+            'url': self.url
+        }
+
+
 class VacancyFilters(BaseModel):
     """Vacancy search filters model."""
 
@@ -86,47 +203,6 @@ class VacancyFilters(BaseModel):
                 raise ValueError(
                     'salary_to must be greater than or equal to salary_from')
         return v
-
-
-@dataclass
-class VacancyRecord:
-    """Structured vacancy record for JSON output."""
-
-    vacancy_id: Optional[int]
-    external_id: str
-    source_id: int
-    title: str
-    description: Optional[str]
-    company_id: Optional[int]
-    salary_type_id: Optional[int]
-    salary_currency: Optional[str]
-    salary_value: Optional[float]
-    experience_category_id: Optional[int]
-    location_id: Optional[int]
-    specialization_id: Optional[int]
-    published_at: Optional[str]
-    contacts: Optional[str]
-    url: Optional[str]
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for JSON serialization."""
-        return {
-            'vacancy_id': self.vacancy_id,
-            'external_id': self.external_id,
-            'source_id': self.source_id,
-            'title': self.title,
-            'description': self.description,
-            'company_id': self.company_id,
-            'salary_type_id': self.salary_type_id,
-            'salary_currency': self.salary_currency,
-            'salary_value': self.salary_value,
-            'experience_category_id': self.experience_category_id,
-            'location_id': self.location_id,
-            'specialization_id': self.specialization_id,
-            'published_at': self.published_at,
-            'contacts': self.contacts,
-            'url': self.url
-        }
 
 
 @dataclass
@@ -307,7 +383,6 @@ class HHAPIParser:
 
                 # Handle 403 errors (often rate limiting in disguise)
                 if response.status == 403:
-                    print(response.text)
                     self.rate_limiter.record_429_error()
                     self.logger.warning("Got 403 error, "
                                         "treating as rate limit. Waiting 60s")
@@ -452,10 +527,11 @@ class HHAPIParser:
 
         return await self._make_request('GET', '/vacancies', params=params)
 
-    def _extract_salary_info(self, salary_data: Optional[Dict]) -> tuple:
-        """Extract salary information and determine salary type."""
+    def _extract_salary_info(
+            self, salary_data: Optional[Dict]) -> Optional[Salary]:
+        """Extract salary information and return Salary object."""
         if not salary_data:
-            return None, None, None
+            return None
 
         salary_from = salary_data.get('from')
         salary_to = salary_data.get('to')
@@ -463,41 +539,62 @@ class HHAPIParser:
 
         # Determine salary type and value
         if salary_from and salary_to:
-            salary_type_id = 3  # Range
-            salary_value = (salary_from + salary_to) / 2  # Average
+            type_id = 3  # Range
+            value = (salary_from + salary_to) / 2  # Average
         elif salary_from:
-            salary_type_id = 1  # From
-            salary_value = salary_from
+            type_id = 1  # From
+            value = salary_from
         elif salary_to:
-            salary_type_id = 2  # Up to
-            salary_value = salary_to
+            type_id = 2  # Up to
+            value = salary_to
         else:
-            salary_type_id = None
-            salary_value = None
+            return None
 
-        return salary_type_id, currency, salary_value
+        return Salary(type_id=type_id, currency=currency, value=value)
 
     def _map_experience_to_category(
-            self, experience_data: Optional[Dict]) -> Optional[int]:
-        """Map HH experience to category ID."""
+            self, experience_data: Optional[Dict]) -> (
+            Optional)[ExperienceCategory]:
+        """Map HH experience to ExperienceCategory object."""
         if not experience_data:
             return None
 
         exp_id = experience_data.get('id', '')
+        exp_name = experience_data.get('name', '')
+
         mapping = {
             'noExperience': 1,
             'between1And3': 2,
             'between3And6': 3,
             'moreThan6': 4
         }
-        return mapping.get(exp_id)
+
+        category_id = mapping.get(exp_id)
+        if category_id:
+            return ExperienceCategory(id=category_id, name=exp_name)
+        return None
+
+    def _extract_employment_types(
+            self, vacancy_data: Dict) -> List[EmploymentType]:
+        """Extract employment types from vacancy data."""
+        employment_types = []
+
+        # Check employment field
+        employment = vacancy_data.get('employment')
+        if employment and employment.get('id'):
+            emp_id = employment['id']
+            try:
+                employment_types.append(EmploymentType(emp_id))
+            except ValueError:
+                pass  # Skip unknown employment types
+
+        return employment_types
 
     async def _convert_to_vacancy_record(
-            self, vacancy_data: Dict, source_id: int = 1) -> VacancyRecord:
-        """Convert HH API vacancy data to structured VacancyRecord."""
+            self, vacancy_data: Dict, source_id: int = 1) -> Vacancy:
+        """Convert HH API vacancy data to structured Vacancy object."""
         # Extract salary information
-        salary_type_id, salary_currency, salary_value = self.\
-            _extract_salary_info(vacancy_data.get('salary'))
+        salary = self._extract_salary_info(vacancy_data.get('salary'))
 
         # Get full vacancy details for description and contacts
         try:
@@ -516,23 +613,60 @@ class HHAPIParser:
                 'requirement', '')
             contacts = None
 
-        return VacancyRecord(
-            vacancy_id=None,  # Will be auto-generated in DB
+        # Create source object
+        source = Source(id=source_id, name="hh.ru")
+
+        # Create company object if available
+        company = None
+        company_data = vacancy_data.get('employer')
+        if company_data:
+            company = Company(
+                id=int(company_data.get('id', 0)) if
+                company_data.get('id') else 0,
+                name=company_data.get('name', '')
+            )
+
+        # Create location object if available
+        location = None
+        area_data = vacancy_data.get('area')
+        if area_data:
+            location = Location(
+                id=int(area_data.get('id', 0)) if area_data.get('id') else 0,
+                name=area_data.get('name', '')
+            )
+
+        # Create specialization object if available
+        specialization = None
+        professional_roles = vacancy_data.get('professional_roles', [])
+        if professional_roles:
+            role = professional_roles[0]
+            specialization = Specialization(
+                id=int(role.get('id', 0)) if role.get('id') else 0,
+                name=role.get('name', '')
+            )
+
+        # Create timestamp object if available
+        published_at = None
+        if vacancy_data.get('published_at'):
+            published_at = TimeStamp(value=vacancy_data['published_at'])
+
+        # Extract employment types
+        employment_types = self._extract_employment_types(vacancy_data)
+
+        return Vacancy(
+            id=0,  # Will be auto-generated in DB
             external_id=str(vacancy_data['id']),
-            source_id=source_id,
+            source=source,
             title=vacancy_data.get('name', ''),
             description=description,
-            company_id=None,  # Would need separate company mapping
-            salary_type_id=salary_type_id,
-            salary_currency=salary_currency,
-            salary_value=salary_value,
-            experience_category_id=self._map_experience_to_category(
+            company=company,
+            salary=salary,
+            experience_category=self._map_experience_to_category(
                 vacancy_data.get('experience')),
-            location_id=None,  # Would need separate location mapping
-            specialization_id=vacancy_data.get(
-                'professional_roles', [{}])[0].get('id') if vacancy_data.get(
-                'professional_roles') else None,
-            published_at=vacancy_data.get('published_at'),
+            location=location,
+            specialization=specialization,
+            employment_types=employment_types,
+            published_at=published_at,
             contacts=contacts,
             url=vacancy_data.get('alternate_url')
         )
@@ -541,7 +675,7 @@ class HHAPIParser:
             self,
             filters: VacancyFilters,
             max_results: Optional[int] = None
-    ) -> AsyncGenerator[VacancyRecord, None]:
+    ) -> AsyncGenerator[Vacancy, None]:
         """Search ALL vacancies using comprehensive strategy."""
         results_count = 0
         max_results = max_results or float('inf')
