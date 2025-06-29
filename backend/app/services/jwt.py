@@ -1,6 +1,6 @@
 """JWT utility functions."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from app.core.config import get_settings
 
@@ -13,7 +13,7 @@ def create_access_token(user_id: int) -> str:
     settings = get_settings()
 
     to_encode: dict = {"sub": str(user_id)}
-    expire = datetime.utcnow() \
+    expire = datetime.now(timezone.utc) \
         + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.JWT_KEY, algorithm=ALGORITHM)
@@ -23,7 +23,7 @@ def create_refresh_token(user_id: int) -> str:
     """Create new refresh token."""
     settings = get_settings()
 
-    expire = datetime.utcnow() \
+    expire = datetime.now(timezone.utc) \
         + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode: dict = {"sub": str(user_id)}
     to_encode.update({"exp": expire})
