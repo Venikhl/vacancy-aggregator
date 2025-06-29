@@ -12,21 +12,33 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { LockKeyhole, User } from 'lucide-react';
+import axiosInstance from '@/api';
+import TokenService from '@/api/tokens.ts';
 
 const Login = () => {
+    const navigate = useNavigate();
+
     const form = useForm<z.infer<typeof loginFormSchema>>({
         resolver: zodResolver(loginFormSchema),
         defaultValues: {
-            username: '',
+            email: '',
             password: '',
             remember: false,
         },
     });
 
     function onSubmit(values: z.infer<typeof loginFormSchema>) {
-        console.log(values);
+        axiosInstance
+            .post('/login', values)
+            .then((response) => {
+                TokenService.setTokens(response.data);
+                navigate('/');
+            })
+            .catch((error) => {
+                console.log(error);
+            });
     }
 
     return (
@@ -41,13 +53,13 @@ const Login = () => {
                     </h1>
                     <FormField
                         control={form.control}
-                        name="username"
+                        name="email"
                         render={({ field }) => (
                             <FormItem>
                                 <FormControl>
                                     <Input
                                         startIcon={User}
-                                        placeholder="Почта/Никнейм"
+                                        placeholder="Почта"
                                         {...field}
                                     />
                                 </FormControl>

@@ -2,12 +2,12 @@ import { z } from 'zod';
 
 export const registerFormSchema = z
     .object({
-        name: z
+        first_name: z
             .string()
             .min(2, 'Имя должно содержать минимум 2 символа')
             .max(50, 'Имя должно содержать не более 50 символов'),
 
-        surname: z
+        last_name: z
             .string()
             .min(2, 'Фамилия должна содержать минимум 2 символа')
             .max(50, 'Фамилия должна содержать не более 50 символов'),
