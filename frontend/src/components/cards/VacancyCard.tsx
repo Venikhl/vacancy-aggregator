@@ -36,6 +36,7 @@ export const VacancyCard: React.FC<VacancyCardProps> = ({
     salary,
 }) => {
     const [open, setOpen] = useState(false);
+    // TODO: ГЛЕБ УБЕРИ ANY
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [details, setDetails] = useState<any>(null);
     const [loading, setLoading] = useState(false);
