@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button.tsx';
+import { cn } from '@/lib/utils.ts';
 import { File, Cog, Heart, Search } from 'lucide-react';
+import { useUserInfo } from '@/hooks/useUserInfo';
 
 const Sidebar: React.FC = () => {
     const navLinks = [
@@ -11,6 +12,8 @@ const Sidebar: React.FC = () => {
         { href: '/favorites', title: 'Избранное', icon: Heart },
         { href: '/settings', title: 'Настройки', icon: Cog },
     ];
+
+    const { user: value } = useUserInfo();
 
     return (
         <aside
@@ -31,10 +34,10 @@ const Sidebar: React.FC = () => {
                     className="w-20 h-20 rounded-full object-cover mb-4"
                 />
                 <div className="font-bold text-[1.1rem] text-on-foreground">
-                    Вера Неттор
+                    {value?.first_name}
                 </div>
                 <div className="text-[0.9rem] text-secondary">
-                    VeraNettor2002@gmail.com
+                    {value?.email}
                 </div>
             </div>
 

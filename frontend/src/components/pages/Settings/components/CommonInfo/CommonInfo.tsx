@@ -35,13 +35,13 @@ const CommonInfo = ({ form, handleSave, values }: CommonInfoProps) => {
 
             <FormField
                 control={form.control}
-                name="fullName"
+                name="firstName"
                 render={({ field }) => (
                     <FormItem>
                         <FormControl>
                             <SettingsItem
                                 name="Имя"
-                                value={values.fullName}
+                                value={values.firstName}
                                 onSave={handleSave}
                             >
                                 <Input placeholder="Введите имя" {...field} />
@@ -53,19 +53,16 @@ const CommonInfo = ({ form, handleSave, values }: CommonInfoProps) => {
 
             <FormField
                 control={form.control}
-                name="nickname"
+                name="lastName"
                 render={({ field }) => (
                     <FormItem>
                         <FormControl>
                             <SettingsItem
-                                name="Никнейм"
-                                value={values.nickname}
+                                name="Фамилия"
+                                value={values.lastName}
                                 onSave={handleSave}
                             >
-                                <Input
-                                    placeholder="Введите никнейм"
-                                    {...field}
-                                />
+                                <Input placeholder="Введите имя" {...field} />
                             </SettingsItem>
                         </FormControl>
                     </FormItem>

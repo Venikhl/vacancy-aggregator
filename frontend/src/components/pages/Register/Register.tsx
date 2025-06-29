@@ -12,13 +12,18 @@ import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
 import { Mail, User, Lock } from 'lucide-react';
 import { registerFormSchema } from '@/schemas/register.ts';
+import axiosInstance from '@/api';
+import TokenService from '@/api/tokens.ts';
+import { useNavigate } from 'react-router-dom';
 
 const Register = () => {
+    const navigate = useNavigate();
+
     const form = useForm<z.infer<typeof registerFormSchema>>({
         resolver: zodResolver(registerFormSchema),
         defaultValues: {
-            name: '',
-            surname: '',
+            first_name: '',
+            last_name: '',
             email: '',
             password: '',
             confirmPassword: '',
@@ -26,7 +31,15 @@ const Register = () => {
     });
 
     function onSubmit(values: z.infer<typeof registerFormSchema>) {
-        console.log(values);
+        axiosInstance
+            .post('/register', values)
+            .then((response) => {
+                TokenService.setTokens(response.data);
+                navigate('/');
+            })
+            .catch((error) => {
+                console.log(error);
+            });
     }
 
     return (
@@ -42,7 +55,7 @@ const Register = () => {
                     <div className="flex items-center gap-x-[60px]">
                         <FormField
                             control={form.control}
-                            name="name"
+                            name="first_name"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormControl>
@@ -58,7 +71,7 @@ const Register = () => {
                         />
                         <FormField
                             control={form.control}
-                            name="surname"
+                            name="last_name"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormControl>
