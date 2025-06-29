@@ -3,7 +3,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button.tsx';
 import { cn } from '@/lib/utils.ts';
 import { File, Cog, Heart, Search } from 'lucide-react';
-import { useSidebarInfo } from './hooks/useSidebarInfo';
+import { useUserInfo } from '@/hooks/useUserInfo';
 
 const Sidebar: React.FC = () => {
     const navLinks = [
@@ -13,7 +13,7 @@ const Sidebar: React.FC = () => {
         { href: '/settings', title: 'Настройки', icon: Cog },
     ];
 
-    const { value } = useSidebarInfo();
+    const { user: value } = useUserInfo();
 
     return (
         <aside
