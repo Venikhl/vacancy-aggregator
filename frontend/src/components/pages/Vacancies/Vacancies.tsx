@@ -25,7 +25,7 @@ export const Vacancies: React.FC = () => {
     useEffect(() => {
         const offset = (currentPage - 1) * VACANCIES_PER_PAGE;
         fetchVacancies(filters, offset, VACANCIES_PER_PAGE);
-    }, [filters, currentPage]);
+    }, [filters, currentPage, fetchVacancies]);
 
     const handlePageChange = (page: number) => {
         setCurrentPage(page);
