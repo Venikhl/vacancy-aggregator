@@ -10,7 +10,10 @@ import os
 from typing import List, Optional
 import httpx
 import aiofiles
-
+import hashlib
+from playwright.async_api import async_playwright
+from api.v1.models import Resume, Salary, Source, Location, ExperienceCategory
+import re
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 catalog_dict = {
@@ -159,7 +162,118 @@ class SuperJobParser:
             await json_file.write(json.dumps(parsed_cleaned,
                                              ensure_ascii=False, indent=4))
 
+class ResumeScraping:
+    base_url = "https://www.superjob.ru/resume/"
 
+    def __init__(self, speciality_name, amount):
+        self.speciality_name = speciality_name
+        self.amount = amount
+
+    async def scrape(self):
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=False)
+            page = await browser.new_page()
+            await page.goto(self.base_url)
+            await page.fill('input[name="keywords"]', self.speciality_name)
+            await page.click('button#searchByHintSelect-input')
+            await page.click('text=Резюме')
+            await page.click('button[type="submit"]')
+
+            await asyncio.sleep(5)
+           
+            page_link_elements = await page.query_selector_all('a[class*="f-test-link-"][title]:not([title="дальше"])')
+
+           
+            max_page_number = 1
+
+            if page_link_elements:
+                page_numbers = []
+                for element in page_link_elements:
+                    title = await element.get_attribute('title')
+                    if title and title.isdigit():
+                        page_numbers.append(int(title))
+
+                if page_numbers:
+                    max_page_number = max(page_numbers)
+
+            print(f"Total pages found: {max_page_number}")
+
+            all_scraped_data = []
+
+            for i in range(1, min(max_page_number + 1, self.amount + 1)):
+                print(f"Scraping page {i}...")
+                if i > 1:
+                    next_page_selector = f'a[title="{i}"]'
+                    await page.click(next_page_selector)
+                    await asyncio.sleep(5)  
+
+               
+                # job_listings = await page.query_selector_all('div.f-test-search-result-item')
+                # job_listings = await page.query_selector_all('div._1-PID._3LfUi.URBLZ')
+                job_listings = await page.query_selector_all('div.f-test-search-result-item')
+
+                for job_listing in job_listings:
+                    try:
+                        title_element = await job_listing.query_selector('a[class*="f-test-link-"][target="_blank"]')
+                        # title_element = await job_listing.query_selector('span.f-test-link-resume-name')
+                        title = await title_element.text_content() if title_element else 'N/A'
+                        link = await title_element.get_attribute('href') if title_element else 'N/A'
+                        link_to_go = "https://www.superjob.ru" + link
+                        await page.goto(link_to_go)
+                        job_title = await page.locator('h1.VB8-V._3R5DT._3doCL.eFbGk').text_content()
+                        salary = await page.locator('span._3R5DT._3doCL._1taY2').first.text_content()
+                        amount = int(re.sub(r'[^\d]', '', salary))
+                        currency = re.sub(r'[\d\s\xa0]', '', salary).strip()
+                        salary_information = Salary(
+                            type=currency, currency=currency, value=amount)
+                        source = Source(name=link_to_go)
+
+                        age_info = await page.locator('span._1un4T.X9SAU.Xu7gX._1lLeK._2GB-\\_._3doCL._2k8ZM.rtYnN').inner_text()
+
+                        loc = await page.locator('div.J\\+R2u').text_content()
+                        loc = loc.replace('\xa0', ' ')
+                        location = Location(region=loc)
+                        work_experience = await page.locator("h2.j66yb:has-text('Опыт работы')").text_content()
+                        work_experience = work_experience.replace('\xa0', ' ')
+                        integers = re.findall(r'\d+', work_experience)
+
+                        years_of_experience = int(
+                            integers[0]) if integers else 0
+                        exp_cat = ExperienceCategory(
+                            name=work_experience, years_of_experience=years_of_experience)
+
+                        employment = await page.locator('div.MokF1 span._1taY2:has-text("Занятость")').text_content()
+                        citizenship_label = page.locator(
+                            'div:has-text("Гражданство")')
+                        citizenship_value = citizenship_label.locator(
+                            'xpath=following-sibling::div[1]/span').first
+                        citizenship = await citizenship_value.text_content()
+
+                        resume = Resume(
+                             id=int(hashlib.md5(link_to_go.encode()).hexdigest(), 16),
+                              external_id=link.split("/")[-2] if link != 'N/A' else "unknown",
+                            source=source,
+                            title=job_title,
+                            salary=salary_information,
+                            location=location,
+                            age_info=age_info,
+                            experience_category=exp_cat,
+                            citizenship=citizenship,
+                            employment=employment
+                        )
+                        all_scraped_data.append(resume)
+                    except Exception as e:
+                        print(f"Error scraping a job listing: {e}")
+                        continue
+
+                if len(all_scraped_data) >= self.amount:
+                    print(
+                        f"Reached desired amount of {self.amount} items. Stopping scrape.")
+                    break
+
+            await browser.close()
+        return all_scraped_data
+           
 async def main():
     """Entry point for asynchronous script execution."""
     parser = SuperJobParser()
