@@ -146,6 +146,7 @@ class ExperienceCategory(BaseModel):
     """Experience category."""
 
     name: str
+    years_of_experience: int | None = None
 
 
 class Location(BaseModel):
@@ -237,6 +238,7 @@ class Resume(BaseModel):
     description: str | None = None
     location: Location | None = None
     experience_category: ExperienceCategory | None = None
+    employment: str | None = None
     skills: str | None = None
     education: str | None = None
     specialization: Specialization | None = None
