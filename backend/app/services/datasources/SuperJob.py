@@ -178,12 +178,12 @@ class ResumeScraping:
             await page.click('button#searchByHintSelect-input')
             await page.click('text=Резюме')
             await page.click('button[type="submit"]')
+            current_url = page.url
+            print(current_url)
+            await asyncio.sleep(3)
 
-            await asyncio.sleep(5)
-           
             page_link_elements = await page.query_selector_all('a[class*="f-test-link-"][title]:not([title="дальше"])')
 
-           
             max_page_number = 1
 
             if page_link_elements:
@@ -202,31 +202,34 @@ class ResumeScraping:
 
             for i in range(1, min(max_page_number + 1, self.amount + 1)):
                 print(f"Scraping page {i}...")
-                if i > 1:
-                    next_page_selector = f'a[title="{i}"]'
-                    await page.click(next_page_selector)
-                    await asyncio.sleep(5)  
+                if i >= 1:
+                    next_page_selector = current_url+f"&page={i}"
+                    print(next_page_selector)
+                    await page.goto(next_page_selector)
+                    await asyncio.sleep(2)
 
-               
-                # job_listings = await page.query_selector_all('div.f-test-search-result-item')
-                # job_listings = await page.query_selector_all('div._1-PID._3LfUi.URBLZ')
                 job_listings = await page.query_selector_all('div.f-test-search-result-item')
-
-                for job_listing in job_listings:
+                links = []
+                for i in job_listings:
+                    link_element = await i.query_selector('a[target="_blank"]')
+                    link = await link_element.get_attribute('href') if link_element else None
+                    if link:
+                        links.append("https://www.superjob.ru" + link)
+                for link in links:
                     try:
-                        title_element = await job_listing.query_selector('a[class*="f-test-link-"][target="_blank"]')
-                        # title_element = await job_listing.query_selector('span.f-test-link-resume-name')
-                        title = await title_element.text_content() if title_element else 'N/A'
-                        link = await title_element.get_attribute('href') if title_element else 'N/A'
-                        link_to_go = "https://www.superjob.ru" + link
-                        await page.goto(link_to_go)
+                        await page.goto(link)
                         job_title = await page.locator('h1.VB8-V._3R5DT._3doCL.eFbGk').text_content()
                         salary = await page.locator('span._3R5DT._3doCL._1taY2').first.text_content()
-                        amount = int(re.sub(r'[^\d]', '', salary))
-                        currency = re.sub(r'[\d\s\xa0]', '', salary).strip()
+                        try:
+                            amount = int(re.sub(r'[^\d]', '', salary))
+                            currency = re.sub(
+                                r'[\d\s\xa0]', '', salary).strip()
+                        except ValueError:
+                            amount = 0
+                            currency = salary
                         salary_information = Salary(
                             type=currency, currency=currency, value=amount)
-                        source = Source(name=link_to_go)
+                        source = Source(name=link)
 
                         age_info = await page.locator('span._1un4T.X9SAU.Xu7gX._1lLeK._2GB-\\_._3doCL._2k8ZM.rtYnN').inner_text()
 
@@ -250,8 +253,9 @@ class ResumeScraping:
                         citizenship = await citizenship_value.text_content()
 
                         resume = Resume(
-                             id=int(hashlib.md5(link_to_go.encode()).hexdigest(), 16),
-                              external_id=link.split("/")[-2] if link != 'N/A' else "unknown",
+                            id=int(hashlib.md5(link.encode()).hexdigest(), 16),
+                            external_id=link.split(
+                                "/")[-2] if link != 'N/A' else "unknown",
                             source=source,
                             title=job_title,
                             salary=salary_information,
@@ -261,6 +265,11 @@ class ResumeScraping:
                             citizenship=citizenship,
                             employment=employment
                         )
+                        # scraped_item = {
+                        #     "Education": education_list,
+                        #     "Foreign Languages": languages,
+                        #     "Driver's License": license_category
+                        # }
                         all_scraped_data.append(resume)
                     except Exception as e:
                         print(f"Error scraping a job listing: {e}")
@@ -272,7 +281,9 @@ class ResumeScraping:
                     break
 
             await browser.close()
+            print("Here: \n", all_scraped_data)
         return all_scraped_data
+
            
 async def main():
     """Entry point for asynchronous script execution."""
