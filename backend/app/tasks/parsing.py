@@ -11,6 +11,7 @@ from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
+
 async def store_vacancy(session: AsyncSession, vacancy: Vacancy):
     pass
 
