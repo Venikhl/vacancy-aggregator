@@ -230,3 +230,63 @@ class VacancyParser(ABC):
         return TimeStamp(time_stamp=timestamp)
 
 
+class ParserManager:
+    """Manager class for handling multiple parsers."""
+    
+    def __init__(self, parsers: List[VacancyParser]):
+        """Initialize with list of parsers."""
+        self.parsers = parsers
+        self.logger = logging.getLogger(self.__class__.__name__)
+    
+    async def parse_all(
+        self,
+        filters: VacancyFilter,
+        max_results_per_parser: Optional[int] = None
+    ) -> List[ParserResult]:
+        """Parse vacancies using all available parsers."""
+        results = []
+        
+        for parser in self.parsers:
+            try:
+                self.logger.info(f"Starting {parser.parser_name} parser...")
+                result = await parser.parse_and_save(filters, max_results_per_parser)
+                results.append(result)
+                
+            except Exception as e:
+                self.logger.error(f"Error in {parser.parser_name}: {e}")
+                # Continue with other parsers
+                continue
+        
+        return results
+    
+    async def parse_specific(
+        self,
+        parser_names: List[str],
+        filters: VacancyFilter,
+        max_results_per_parser: Optional[int] = None
+    ) -> List[ParserResult]:
+        """Parse vacancies using specific parsers."""
+        results = []
+        
+        for parser in self.parsers:
+            if parser.parser_name in parser_names:
+                try:
+                    result = await parser.parse_and_save(filters, max_results_per_parser)
+                    results.append(result)
+                    
+                except Exception as e:
+                    self.logger.error(f"Error in {parser.parser_name}: {e}")
+                    continue
+        
+        return results
+    
+    def get_parser_by_name(self, name: str) -> Optional[VacancyParser]:
+        """Get parser by name."""
+        for parser in self.parsers:
+            if parser.parser_name == name:
+                return parser
+        return None
+    
+    def list_parsers(self) -> List[str]:
+        """List all available parser names."""
+        return [parser.parser_name for parser in self.parsers]
