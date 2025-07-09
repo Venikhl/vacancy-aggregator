@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     JWT_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     REFRESH_TOKEN_EXPIRE_DAYS: int
+    HH_CLIENT_ID: str
+    HH_CLIENT_SECRET: str
 
 
 @lru_cache()
