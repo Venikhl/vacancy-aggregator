@@ -16,6 +16,13 @@ scheduler = AsyncIOScheduler()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """
+    Define the application lifespan.
+
+    Everything before `yield` statement gets
+    executed on startup. Everything after -
+    on shutdown.
+    """
     logging.basicConfig(
         filename="vacancy-aggregator-backend.log",
         level=logging.INFO
