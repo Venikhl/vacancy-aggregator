@@ -66,7 +66,7 @@ async def parse_and_store_superjob():
     return  # TODO: implement the task
 
     get_session = get_async_session()
-    session = await anext(get_session)
+    # session = await anext(get_session)
     try:
         logger.info("Scheduled parsing (superjob) started")
 
