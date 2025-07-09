@@ -4,7 +4,6 @@ import logging
 from datetime import datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.database import get_async_session
-from app.database.crud import vacancy as crud_vacancy
 from app.services.datasources.rabotaru.scraper import collect_vacancies
 from app.services.datasources.HHru import HHAPIParser, VacancyFilters
 from app.api.v1.models import Vacancy
