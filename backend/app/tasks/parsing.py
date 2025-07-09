@@ -13,10 +13,12 @@ logger = logging.getLogger(__name__)
 
 
 async def store_vacancy(session: AsyncSession, vacancy: Vacancy):
+    """Store vacancy in database."""
     pass
 
 
 async def parse_and_store_rabotaru():
+    """Parse from rabota.ru and store into db."""
     return  # TODO: implement the task
 
     get_session = get_async_session()
@@ -37,6 +39,7 @@ async def parse_and_store_rabotaru():
 
 
 async def parse_and_store_hhru():
+    """Parse from hh.ru and store into db."""
     return  # TODO: implement the task
 
     get_session = get_async_session()
@@ -63,6 +66,7 @@ async def parse_and_store_hhru():
 
 
 async def parse_and_store_superjob():
+    """Parse from SuperJob and store into db."""
     return  # TODO: implement the task
 
     get_session = get_async_session()
