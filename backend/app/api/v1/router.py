@@ -7,7 +7,7 @@ import app.database.models as dbmodels
 from app.services.jwt import create_access_token, create_refresh_token, \
     verify_token
 from app.services.security import hash_password, verify_password
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from .models import AccessToken, Company, EmploymentType, \
     ExperienceCategory, Location, Login, Register, Resume, ResumeList, \
@@ -189,6 +189,7 @@ async def update_me(
         hashed_password = hash_password(update_me.current_password)
         fields["hashed_password"] = hashed_password
     await user.update(session, db_obj=db_user, obj_in=fields)
+    return Response(status_code=200)
 
 
 @router.post("/get_me", responses={
