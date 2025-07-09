@@ -7,7 +7,7 @@ import app.database.models as dbmodels
 from app.services.jwt import create_access_token, create_refresh_token, \
     verify_token
 from app.services.security import hash_password, verify_password
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from .models import AccessToken, Company, EmploymentType, \
     ExperienceCategory, Location, Login, Register, Resume, ResumeList, \
@@ -160,12 +160,13 @@ async def update_me(
     db_user = await user.get_by_id(session, id=user_id)
     if not db_user:
         raise HTTPException(status_code=403, detail="Access denied")
+    fields = {}
     if update_me.first_name:
-        db_user.first_name = update_me.first_name
+        fields["first_name"] = update_me.first_name
     if update_me.last_name:
-        db_user.last_name = update_me.last_name
+        fields["last_name"] = update_me.last_name
     if update_me.email:
-        db_user.email = update_me.email
+        fields["email"] = update_me.email
     if update_me.current_password or update_me.new_password:
         if not update_me.current_password:
             raise HTTPException(
@@ -186,7 +187,9 @@ async def update_me(
                 detail="Current password is incorrect"
             )
         hashed_password = hash_password(update_me.current_password)
-        db_user.hashed_password = hashed_password
+        fields["hashed_password"] = hashed_password
+    await user.update(session, db_obj=db_user, obj_in=fields)
+    return Response(status_code=200)
 
 
 @router.post("/get_me", responses={
