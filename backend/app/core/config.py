@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     PROFILE_PICTURE_DIRECTORY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     REFRESH_TOKEN_EXPIRE_DAYS: int
+    HH_CLIENT_ID: str
+    HH_CLIENT_SECRET: str
 
 
 @lru_cache()
