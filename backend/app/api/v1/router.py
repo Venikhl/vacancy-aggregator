@@ -284,6 +284,7 @@ async def update_profile_pic(
     }
 })
 async def profile_pic(user_id: int) -> FileResponse:
+    """Retrieve the profile picture for user."""
     settings = get_settings()
     filename = f"{user_id}.jpeg"
     image_path = os.path.join(settings.PROFILE_PICTURE_DIRECTORY, filename)
