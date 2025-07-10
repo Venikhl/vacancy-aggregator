@@ -1,6 +1,6 @@
 """API models."""
 
-from typing import List, Literal, Optional
+from typing import List, Optional
 from pydantic import BaseModel
 from datetime import date
 from enum import Enum
