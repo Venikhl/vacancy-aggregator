@@ -10,6 +10,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship, DeclarativeBase
+from sqlalchemy.types import Date, Enum
+from app.api.v1.models import UserGender
 
 
 class Base(DeclarativeBase):
@@ -57,7 +59,10 @@ class User(Base):
     first_name = Column(String(100))
     last_name = Column(String(100))
     email = Column(String(200))
+    birth_date = Column(Date)
+    gender = Column(Enum(UserGender, name="user_gender"))
     hashed_password = Column(String(100))
+
 
     favorite_vacancies = relationship(
         "Vacancy",
