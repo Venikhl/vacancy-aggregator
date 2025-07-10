@@ -63,7 +63,6 @@ class User(Base):
     gender = Column(Enum(UserGender, name="user_gender"))
     hashed_password = Column(String(100))
 
-
     favorite_vacancies = relationship(
         "Vacancy",
         secondary=user_favorite_vacancies,
