@@ -11,7 +11,8 @@ import app.database.models as dbmodels
 from app.services.jwt import create_access_token, create_refresh_token, \
     verify_token
 from app.services.security import hash_password, verify_password
-from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Response, \
+    UploadFile
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from .models import AccessToken, Company, EmploymentType, \
     ExperienceCategory, Location, Login, Register, Resume, ResumeList, \
