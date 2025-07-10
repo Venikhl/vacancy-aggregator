@@ -1,5 +1,9 @@
 """API routes."""
 
+import os
+
+from fastapi.responses import FileResponse
+from app.core.config import get_settings
 from app.database.database import get_async_session
 from app.database.crud import get_experience_category_by_name, user, \
     get_location_by_region, vacancy as dbvacancy, resume as dbresume
@@ -7,7 +11,8 @@ import app.database.models as dbmodels
 from app.services.jwt import create_access_token, create_refresh_token, \
     verify_token
 from app.services.security import hash_password, verify_password
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, File, HTTPException, Response, \
+    UploadFile
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from .models import AccessToken, Company, EmploymentType, \
     ExperienceCategory, Location, Login, Register, Resume, ResumeList, \
@@ -16,6 +21,8 @@ from .models import AccessToken, Company, EmploymentType, \
     VacancyShort, VacanciesView, View, ErrorResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated, List, Optional
+from PIL import Image
+from io import BytesIO
 
 
 router = APIRouter()
@@ -167,6 +174,10 @@ async def update_me(
         fields["last_name"] = update_me.last_name
     if update_me.email:
         fields["email"] = update_me.email
+    if update_me.gender:
+        fields["gender"] = update_me.gender
+    if update_me.birth_date:
+        fields["birth_date"] = update_me.birth_date
     if update_me.current_password or update_me.new_password:
         if not update_me.current_password:
             raise HTTPException(
@@ -190,6 +201,100 @@ async def update_me(
         fields["hashed_password"] = hashed_password
     await user.update(session, db_obj=db_user, obj_in=fields)
     return Response(status_code=200)
+
+
+@router.post("/update_profile_pic", responses={
+    200: {
+        "description": "Successfully updated"
+    },
+    400: {
+        "description": "Invalid picture format"
+    },
+    401: {
+        "model": ErrorResponse,
+        "description": "Missing or invalid access token"
+    },
+    403: {
+        "model": ErrorResponse,
+        "description": "Access denied"
+    },
+})
+async def update_profile_pic(
+    profile_pic: UploadFile = File(...),
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme)
+):
+    """
+    Update user profile picture.
+
+    The picture dimesions should be between 128x128 and 512x512.
+    only PNG, JPG, and JPEG are accepted.
+    """
+    token = credentials.credentials
+    user_id = verify_token(token)
+    if not user_id:
+        raise HTTPException(
+            status_code=401,
+            detail="Access token expired or invalid"
+        )
+    contents = await profile_pic.read()
+    image = None
+    image_format = None
+    width = None
+    height = None
+    try:
+        image = Image.open(BytesIO(contents))
+        if image.format is not None:
+            image_format = image.format.upper()
+        width, height = image.size
+    except Exception:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid picture format"
+        )
+
+    if image_format not in {"PNG", "JPG", "JPEG"}:
+        raise HTTPException(
+            status_code=400,
+            detail="Unsupported picture format. Use PNG or JPEG"
+        )
+
+    if not (128 <= width <= 512 and 128 <= height <= 512):
+        raise HTTPException(
+            status_code=400,
+            detail="Unsupported picture dimensions. \
+                Only sizes between 128x128 and 512x512 are allowed."
+        )
+
+    settings = get_settings()
+    filename = f"{user_id}.jpeg"
+    save_path = os.path.join(settings.PROFILE_PICTURE_DIRECTORY, filename)
+
+    rgb_image = image.convert("RGB")
+    rgb_image.save(save_path, "JPEG", quality=85)
+
+    return Response(status_code=200)
+
+
+@router.get("/profile_pic/{user_id}", responses={
+    200: {
+        "description": "Profile picture"
+    },
+    404: {
+        "description": "Profile picture not found"
+    }
+})
+async def profile_pic(user_id: int) -> FileResponse:
+    """Retrieve the profile picture for user."""
+    settings = get_settings()
+    filename = f"{user_id}.jpeg"
+    image_path = os.path.join(settings.PROFILE_PICTURE_DIRECTORY, filename)
+    if not os.path.exists(image_path):
+        raise HTTPException(
+            status_code=404,
+            detail="Profile picture not found"
+        )
+
+    return FileResponse(path=image_path, media_type="image/jpeg")
 
 
 @router.post("/get_me", responses={
@@ -222,10 +327,20 @@ async def get_me(
     if not db_user:
         raise HTTPException(status_code=403, detail="Access denied")
 
+    profile_pic_url = None
+    settings = get_settings()
+    filename = f"{user_id}.jpeg"
+    image_path = os.path.join(settings.PROFILE_PICTURE_DIRECTORY, filename)
+    if os.path.exists(image_path):
+        profile_pic_url = f"{settings.HOST}/api/v1/profile_pic/{user_id}"
+
     return User(
         first_name=db_user.first_name,
         last_name=db_user.last_name,
-        email=db_user.email
+        email=db_user.email,
+        birth_date=db_user.birth_date,
+        gender=db_user.gender,
+        profile_pic_url=profile_pic_url,
     )
 
 

@@ -12,9 +12,11 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8"
     )
 
+    HOST: str = "127.0.0.1"
     APP_NAME: str = "VacancyAggregatorAPI"
     DATABASE_URL: str
     JWT_KEY: str
+    PROFILE_PICTURE_DIRECTORY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     REFRESH_TOKEN_EXPIRE_DAYS: int
 

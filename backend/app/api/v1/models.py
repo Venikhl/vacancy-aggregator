@@ -2,6 +2,16 @@
 
 from typing import List, Optional
 from pydantic import BaseModel
+from datetime import date
+from enum import Enum
+
+
+class UserGender(str, Enum):
+    """User gender."""
+
+    male = "male"
+    female = "female"
+    other = "other"
 
 
 class Register(BaseModel):
@@ -11,6 +21,8 @@ class Register(BaseModel):
     last_name: str
     email: str
     password: str
+    gender: UserGender
+    birth_date: date
 
 
 class Login(BaseModel):
@@ -32,6 +44,8 @@ class UpdateMe(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     email: str | None = None
+    gender: UserGender | None = None
+    birth_date: date | None = None
     current_password: str | None = None
     new_password: str | None = None
 
@@ -62,6 +76,9 @@ class User(BaseModel):
     first_name: str
     last_name: str
     email: str
+    birth_date: date | None
+    gender: UserGender | None
+    profile_pic_url: str | None
 
 
 class Salary(BaseModel):
