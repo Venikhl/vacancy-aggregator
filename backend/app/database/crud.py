@@ -9,7 +9,8 @@ from .models import (
     User, Vacancy, Resume, Company, Location,
     Specialization, EmploymentType, ExperienceCategory,
     Source, SalaryType,
-    user_favorite_vacancies, user_favorite_resumes
+    user_favorite_vacancies, user_favorite_resumes,
+    vacancy_employment_type
 )
 
 
@@ -610,3 +611,4 @@ employment_type = CRUDBase(EmploymentType)
 experience_category = CRUDBase(ExperienceCategory)
 source = CRUDBase(Source)
 salary_type = CRUDBase(SalaryType)
+crud_vacancy_employment_type = CRUDBase(vacancy_employment_type)
