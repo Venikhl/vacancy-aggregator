@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int
     HH_CLIENT_ID: str
     HH_CLIENT_SECRET: str
+    HH_ACCESS_TOKEN: str
 
 
 @lru_cache()
