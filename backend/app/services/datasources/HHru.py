@@ -14,17 +14,51 @@ from dataclasses import dataclass, field
 from enum import Enum
 import aiohttp
 import backoff
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 import time
 from dotenv import load_dotenv
+
+from base import VacancyParser, ParserConfig
+from backend.app.api.v1.models import (
+    Vacancy as BackendVacancy,
+    Source as BackendSource,
+    Company as BackendCompany,
+    Salary as BackendSalary,
+    ExperienceCategory as BackendExperienceCategory,
+    Specialization as BackendSpecialization,
+    EmploymentType as BackendEmploymentType,
+    TimeStamp as BackendTimeStamp,
+    Location as BackendLocation,
+    ExperienceCategory
+)
 
 # Load environment variables from .env file
 load_dotenv()
 
 
+class Specialization(BaseModel):
+    """Specialization."""
+
+    specialization: str
+    specialization_id: int | None = None
+
+
+class VacancyFilter(BaseModel):
+    """Vacancy filter."""
+
+    title: str | None
+    salary_min: int | None
+    salary_max: int | None
+    experience_categories: List[ExperienceCategory]
+    location: BackendLocation | None
+    specialization: Specialization | None = None
+    date_from: datetime | None = None
+    date_to: datetime | None = None
+
+
 # Configuration and Models
-class ExperienceLevel(str, Enum):
-    """Experience level enumeration."""
+class HHExperienceLevel(str, Enum):
+    """HH.ru experience level enumeration."""
 
     NO_EXPERIENCE = "noExperience"
     BETWEEN_1_AND_3 = "between1And3"
@@ -32,8 +66,8 @@ class ExperienceLevel(str, Enum):
     MORE_THAN_6 = "moreThan6"
 
 
-class EmploymentType(str, Enum):
-    """Employment type enumeration."""
+class HHEmploymentType(str, Enum):
+    """HH.ru employment type enumeration."""
 
     FULL = "full"
     PART = "part"
@@ -42,131 +76,14 @@ class EmploymentType(str, Enum):
     PROBATION = "probation"
 
 
-class ScheduleType(str, Enum):
-    """Schedule type enumeration."""
+class HHScheduleType(str, Enum):
+    """HH.ru schedule type enumeration."""
 
     FULL_DAY = "fullDay"
     SHIFT = "shift"
     FLEXIBLE = "flexible"
     REMOTE = "remote"
     FLY_IN_FLY_OUT = "flyInFlyOut"
-
-
-# Target model structures (assuming these are imported from elsewhere)
-@dataclass
-class Source:
-    """Source information."""
-
-    id: int
-    name: str
-
-
-@dataclass
-class Company:
-    """Company information."""
-
-    id: int
-    name: str
-
-
-@dataclass
-class Salary:
-    """Salary information."""
-
-    type_id: Optional[int] = None
-    currency: Optional[str] = None
-    value: Optional[float] = None
-
-
-@dataclass
-class ExperienceCategory:
-    """Experience category."""
-
-    id: int
-    name: str
-
-
-@dataclass
-class Location:
-    """Location information."""
-
-    id: int
-    name: str
-
-
-@dataclass
-class Specialization:
-    """Specialization information."""
-
-    id: int
-    name: str
-
-
-@dataclass
-class TimeStamp:
-    """Timestamp wrapper."""
-
-    value: str
-
-
-@dataclass
-class Vacancy:
-    """Complete representation of vacancy matching the target model."""
-
-    id: int
-    external_id: str
-    source: Optional[Source] = None
-    title: str = ""
-    description: Optional[str] = None
-    company: Optional[Company] = None
-    salary: Optional[Salary] = None
-    experience_category: Optional[ExperienceCategory] = None
-    location: Optional[Location] = None
-    specialization: Optional[Specialization] = None
-    employment_types: List[EmploymentType] = field(default_factory=list)
-    published_at: Optional[TimeStamp] = None
-    contacts: Optional[str] = None
-    url: Optional[str] = None
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for JSON serialization."""
-        return {
-            'id': self.id,
-            'external_id': self.external_id,
-            'source': {
-                'id': self.source.id,
-                'name': self.source.name
-            } if self.source else None,
-            'title': self.title,
-            'description': self.description,
-            'company': {
-                'id': self.company.id,
-                'name': self.company.name
-            } if self.company else None,
-            'salary': {
-                'type_id': self.salary.type_id,
-                'currency': self.salary.currency,
-                'value': self.salary.value
-            } if self.salary else None,
-            'experience_category': {
-                'id': self.experience_category.id,
-                'name': self.experience_category.name
-            } if self.experience_category else None,
-            'location': {
-                'id': self.location.id,
-                'name': self.location.name
-            } if self.location else None,
-            'specialization': {
-                'id': self.specialization.id,
-                'name': self.specialization.name
-            } if self.specialization else None,
-            'employment_types': [emp_type.value for emp_type in
-                                 self.employment_types],
-            'published_at': self.published_at.value if
-            self.published_at else None,
-            'contacts': self.contacts,
-            'url': self.url
-        }
 
 
 class VacancyFilters(BaseModel):
@@ -178,11 +95,12 @@ class VacancyFilters(BaseModel):
     professional_role: Optional[int] = Field(
         None, description="professional_role ID")
     industry: Optional[int] = Field(None, description="Industry ID")
-    experience: Optional[ExperienceLevel] = Field(
+    experience: Optional[HHExperienceLevel] = Field(
         None, description="Experience level")
-    employment: Optional[EmploymentType] = Field(
+    employment: Optional[HHEmploymentType] = Field(
         None, description="Employment type")
-    schedule: Optional[ScheduleType] = Field(None, description="Schedule type")
+    schedule: Optional[HHScheduleType] = Field(None,
+                                               description="Schedule type")
     salary_from: Optional[int] = Field(
         None, ge=0, description="Minimum salary")
     salary_to: Optional[int] = Field(None, ge=0, description="Maximum salary")
@@ -192,9 +110,13 @@ class VacancyFilters(BaseModel):
         False, description="Only vacancies with salary")
     date_from: Optional[datetime] = Field(
         None, description="Published from date")
-    date_to: Optional[datetime] = Field(None, description="Published to date")
+    date_to: Optional[datetime] = Field(
+        None, description="Published to date")
+    location: Optional[BackendLocation] = Field(
+        None, description="Location information")
 
-    @validator('salary_to')
+    @field_validator('salary_to')
+    @classmethod
     def validate_salary_range(cls, v, values):
         """Validate that salary_to >= salary_from."""
         if (v is not None and 'salary_from' in values and
@@ -206,11 +128,11 @@ class VacancyFilters(BaseModel):
 
 
 @dataclass
-class RateLimiter:
-    """Enhanced rate limiter for API requests with stricter control."""
+class HHRateLimiter:
+    """Rate limiter for HH.ru API requests."""
 
-    max_requests_per_second: float = 2.0  # Conservative limit
-    max_requests_per_minute: int = 100  # Additional minute-based limit
+    max_requests_per_second: float = 15.0  # Conservative limit
+    max_requests_per_minute: int = 1000  # Additional minute-based limit
     _requests: List[float] = field(default_factory=list)
     _minute_requests: List[float] = field(default_factory=list)
     _last_429_time: Optional[float] = field(default=None)
@@ -285,38 +207,37 @@ class HHAuthenticationError(HHAPIError):
     pass
 
 
-class HHAPIParser:
-    """
-    Enhanced HH.ru API Parser with comprehensive coverage strategy.
-
-    Features:
-    - Aggressive date splitting to bypass 2000 results limit
-    - Parameter-based splitting (experience, employment, schedule)
-    - Duplicate detection and removal
-    - Full vacancy details extraction
-    - JSON output format
-    """
+class HHAPIParser(VacancyParser):
+    """Enhanced HH.ru API Parser with comprehensive coverage strategy."""
 
     BASE_URL = "https://api.hh.ru"
     MAX_RESULTS_PER_REQUEST = 100
     MAX_TOTAL_RESULTS = 2000
     MIN_DATE_RANGE_DAYS = 1  # Minimum date range for splitting
 
+    @property
+    def parser_name(self) -> str:
+        """Return the name of the parser."""
+        return "hh_ru_parser"
+
+    @property
+    def source_name(self) -> str:
+        """Return the name of the job source."""
+        return "hh.ru"
+
     def __init__(
             self,
-            client_id: str,
-            client_secret: str,
-            access_token: Optional[str] = None,
-            rate_limiter: Optional[RateLimiter] = None
+            config: Optional[ParserConfig] = None,
+            rate_limiter: Optional[HHRateLimiter] = None
     ):
         """Initialize HH API Parser."""
-        self.client_id = client_id
-        self.client_secret = client_secret
-        self.access_token = access_token
-        self.rate_limiter = (rate_limiter or
-                             RateLimiter(max_requests_per_second=8.0))
+        super().__init__(config or ParserConfig())
+        self.client_id = os.getenv('HH_CLIENT_ID')
+        self.client_secret = os.getenv('HH_CLIENT_SECRET')
+        self.access_token = os.getenv('HH_ACCESS_TOKEN')
+        self.rate_limiter = rate_limiter or HHRateLimiter(
+            max_requests_per_second=8.0)
         self.session: Optional[aiohttp.ClientSession] = None
-        self.logger = logging.getLogger(__name__)
         self.seen_vacancy_ids: Set[str] = set()
         self.request_count = 0
         self.start_time = time.time()
@@ -362,7 +283,7 @@ class HHAPIParser:
         await self.rate_limiter.acquire()
 
         url = f"{self.BASE_URL}/{endpoint.lstrip('/')}"
-        headers = {'User-Agent': 'HH-Parser/1.0'}  # Add User-Agent
+        headers = {'User-Agent': 'HH-Parser/1.0'}  # User-Agent
         if self.access_token:
             headers['Authorization'] = f'Bearer {self.access_token}'
 
@@ -441,26 +362,26 @@ class HHAPIParser:
         combinations.append(base_filters)
 
         # Experience level combinations
-        for exp_level in ExperienceLevel:
+        for exp_level in HHExperienceLevel:
             exp_filters = base_filters.copy()
             exp_filters.experience = exp_level
             combinations.append(exp_filters)
 
         # Employment type combinations
-        for emp_type in EmploymentType:
+        for emp_type in HHEmploymentType:
             emp_filters = base_filters.copy()
             emp_filters.employment = emp_type
             combinations.append(emp_filters)
 
             # Combined experience + employment
-            for exp_level in ExperienceLevel:
+            for exp_level in HHExperienceLevel:
                 combined_filters = base_filters.copy()
                 combined_filters.experience = exp_level
                 combined_filters.employment = emp_type
                 combinations.append(combined_filters)
 
         # Schedule type combinations
-        for schedule in ScheduleType:
+        for schedule in HHScheduleType:
             schedule_filters = base_filters.copy()
             schedule_filters.schedule = schedule
             combinations.append(schedule_filters)
@@ -524,11 +445,10 @@ class HHAPIParser:
                 '%Y-%m-%dT%H:%M:%S')
         if filters.date_to:
             params['date_to'] = filters.date_to.strftime('%Y-%m-%dT%H:%M:%S')
-
         return await self._make_request('GET', '/vacancies', params=params)
 
     def _extract_salary_info(
-            self, salary_data: Optional[Dict]) -> Optional[Salary]:
+            self, salary_data: Optional[Dict]) -> Optional[BackendSalary]:
         """Extract salary information and return Salary object."""
         if not salary_data:
             return None
@@ -537,45 +457,33 @@ class HHAPIParser:
         salary_to = salary_data.get('to')
         currency = salary_data.get('currency')
 
-        # Determine salary type and value
         if salary_from and salary_to:
-            type_id = 3  # Range
-            value = (salary_from + salary_to) / 2  # Average
+            salary_type = "range"
+            value = round((salary_from + salary_to) / 2)  # Round to int
         elif salary_from:
-            type_id = 1  # From
-            value = salary_from
+            salary_type = "from"
+            value = round(salary_from)  # Round to int
         elif salary_to:
-            type_id = 2  # Up to
-            value = salary_to
+            salary_type = "to"
+            value = round(salary_to)  # Round to int
         else:
-            return None
+            return BackendSalary(type=None, currency=currency, value=None)
 
-        return Salary(type_id=type_id, currency=currency, value=value)
+        return BackendSalary(type=salary_type, currency=currency, value=value)
 
     def _map_experience_to_category(
             self, experience_data: Optional[Dict]) -> (
-            Optional)[ExperienceCategory]:
+            Optional)[BackendExperienceCategory]:
         """Map HH experience to ExperienceCategory object."""
         if not experience_data:
             return None
 
-        exp_id = experience_data.get('id', '')
         exp_name = experience_data.get('name', '')
 
-        mapping = {
-            'noExperience': 1,
-            'between1And3': 2,
-            'between3And6': 3,
-            'moreThan6': 4
-        }
-
-        category_id = mapping.get(exp_id)
-        if category_id:
-            return ExperienceCategory(id=category_id, name=exp_name)
-        return None
+        return BackendExperienceCategory(name=exp_name)
 
     def _extract_employment_types(
-            self, vacancy_data: Dict) -> List[EmploymentType]:
+            self, vacancy_data: Dict) -> List[BackendEmploymentType]:
         """Extract employment types from vacancy data."""
         employment_types = []
 
@@ -584,109 +492,122 @@ class HHAPIParser:
         if employment and employment.get('id'):
             emp_id = employment['id']
             try:
-                employment_types.append(EmploymentType(emp_id))
+                employment_types.append(BackendEmploymentType(name=emp_id))
             except ValueError:
                 pass  # Skip unknown employment types
 
         return employment_types
 
-    async def _convert_to_vacancy_record(
-            self, vacancy_data: Dict, source_id: int = 1) -> Vacancy:
-        """Convert HH API vacancy data to structured Vacancy object."""
-        # Extract salary information
-        salary = self._extract_salary_info(vacancy_data.get('salary'))
-
-        # Get full vacancy details for description and contacts
+    async def _convert_to_vacancy_model(
+            self, raw_data: Dict[str, Any]) -> BackendVacancy:
+        """Convert raw API data to Vacancy model with proper error handling."""
         try:
-            full_vacancy = await self.get_vacancy_details(vacancy_data['id'])
-            description = full_vacancy.get('description', '')
-            contacts = json.dumps(
-                full_vacancy.get('contacts')) if full_vacancy.get(
-                'contacts') else None
-            # Add small delay after getting details to prevent rate limiting
-            await asyncio.sleep(0.2)  # 200ms delay after detail requests
+            # Get full vacancy details for description and contacts
+            try:
+                full_vacancy = await self.get_vacancy_details(raw_data['id'])
+                description = full_vacancy.get('description', '') \
+                    if full_vacancy else raw_data.get('description', '')
+                contacts = json.dumps(full_vacancy.get('contacts')) \
+                    if full_vacancy and full_vacancy.get(
+                    'contacts') else None
+                await asyncio.sleep(0.2)
+            except Exception as e:
+                self.logger.warning(f"Could not fetch full details "
+                                    f"for vacancy {raw_data['id']}: {e}")
+                description = (raw_data.get('snippet', {}).
+                               get('requirement', '')
+                               or raw_data.get('description', ''))
+                contacts = None
 
+            # Create backend models with proper defaults
+            source = BackendSource(name=self.source_name)
+
+            # Create company object if available
+            employer = raw_data.get('employer', {})
+            company = BackendCompany(
+                name=employer.get('name', 'Unknown')) if employer else None
+
+            # Create location object if available
+            area = raw_data.get('area', {})
+            location = BackendLocation(
+                region=area.get('name', 'Remote')) if area else None
+
+            # Create specialization object if available
+            professional_roles = raw_data.get('professional_roles', [])
+            specialization = None
+            if professional_roles:
+                role = professional_roles[0]
+                specialization = BackendSpecialization(
+                    specialization=role.get('name', 'Other'))
+
+            # Create timestamp object if available
+            published_at = BackendTimeStamp(time_stamp=raw_data.get(
+                'published_at', datetime.now().isoformat()))
+
+            # Handle salary - ensure we always return a Salary object
+            salary_data = raw_data.get('salary')
+            salary = self._extract_salary_info(salary_data) or BackendSalary()
+
+            # Handle experience - ensure we always return an ExperienceCategory
+            experience = (self._map_experience_to_category(
+                raw_data.get('experience')) or BackendExperienceCategory(
+                name='Not specified'))
+
+            # Handle employment types - ensure we always have at least one
+            employment_types = self._extract_employment_types(raw_data)
+            if not employment_types:
+                employment_types = [BackendEmploymentType(name='full')]
+
+            # Create the vacancy with all required fields
+            return BackendVacancy(
+                id=int(raw_data.get('id', 0)),  # Provide default ID if missing
+                external_id=str(raw_data.get('id', '')),
+                source=source,
+                title=raw_data.get('name', 'No title provided'),
+                description=description,
+                company=company,
+                salary=salary,
+                experience_category=experience,
+                location=location,
+                specialization=specialization,
+                employment_types=employment_types,
+                published_at=published_at,
+                contacts=contacts,
+                url=raw_data.get('alternate_url', '')
+            )
         except Exception as e:
-            self.logger.warning(f"Could not fetch full details "
-                                f"for vacancy {vacancy_data['id']}: {e}")
-            description = vacancy_data.get('snippet', {}).get(
-                'requirement', '')
-            contacts = None
+            self.logger.error(f"Error converting vacancy data: {e}")
+            raise ValueError(f"Failed to convert vacancy "
+                             f"data: {str(e)}") from e
 
-        # Create source object
-        source = Source(id=source_id, name="hh.ru")
-
-        # Create company object if available
-        company = None
-        company_data = vacancy_data.get('employer')
-        if company_data:
-            company = Company(
-                id=int(company_data.get('id', 0)) if
-                company_data.get('id') else 0,
-                name=company_data.get('name', '')
-            )
-
-        # Create location object if available
-        location = None
-        area_data = vacancy_data.get('area')
-        if area_data:
-            location = Location(
-                id=int(area_data.get('id', 0)) if area_data.get('id') else 0,
-                name=area_data.get('name', '')
-            )
-
-        # Create specialization object if available
-        specialization = None
-        professional_roles = vacancy_data.get('professional_roles', [])
-        if professional_roles:
-            role = professional_roles[0]
-            specialization = Specialization(
-                id=int(role.get('id', 0)) if role.get('id') else 0,
-                name=role.get('name', '')
-            )
-
-        # Create timestamp object if available
-        published_at = None
-        if vacancy_data.get('published_at'):
-            published_at = TimeStamp(value=vacancy_data['published_at'])
-
-        # Extract employment types
-        employment_types = self._extract_employment_types(vacancy_data)
-
-        return Vacancy(
-            id=0,  # Will be auto-generated in DB
-            external_id=str(vacancy_data['id']),
-            source=source,
-            title=vacancy_data.get('name', ''),
-            description=description,
-            company=company,
-            salary=salary,
-            experience_category=self._map_experience_to_category(
-                vacancy_data.get('experience')),
-            location=location,
-            specialization=specialization,
-            employment_types=employment_types,
-            published_at=published_at,
-            contacts=contacts,
-            url=vacancy_data.get('alternate_url')
+    async def search_vacancies(
+            self,
+            filters: VacancyFilter,
+            max_results: Optional[int] = None
+    ) -> AsyncGenerator[BackendVacancy, None]:
+        """Search vacancies with given filters."""
+        # Convert backend filters to HH-specific filters
+        hh_filters = VacancyFilters(
+            text=filters.title,
+            area=getattr(filters.location,
+                         'region_id', None) if filters.location else None,
+            professional_role=getattr(
+                filters.specialization, 'specialization_id',
+                None) if filters.specialization else None,
+            date_from=filters.date_from,
+            date_to=filters.date_to,
+            location=filters.location
         )
 
-    async def search_all_vacancies(
-            self,
-            filters: VacancyFilters,
-            max_results: Optional[int] = None
-    ) -> AsyncGenerator[Vacancy, None]:
-        """Search ALL vacancies using comprehensive strategy."""
         results_count = 0
-        max_results = max_results or float('inf')
+        max_results = max_results = max_results or float('inf')
 
-        # Set default date range if not provided
-        if not filters.date_from or not filters.date_to:
-            filters.date_to = datetime.now()
-            filters.date_from = filters.date_to - timedelta(days=30)
+        if not hh_filters.date_from or not hh_filters.date_to:
+            hh_filters.date_to = datetime.now()
+            hh_filters.date_from = hh_filters.date_to - timedelta(days=30)
 
         # Check if we need parameter-based splitting
-        initial_response = await self._search_vacancies_page(filters, 0)
+        initial_response = await self._search_vacancies_page(hh_filters, 0)
         total_found = initial_response.get('found', 0)
 
         self.logger.info(f"Total vacancies found: {total_found}")
@@ -695,7 +616,7 @@ class HHAPIParser:
             # Simple pagination is sufficient
             page = 0
             while results_count < max_results:
-                response = await self._search_vacancies_page(filters, page)
+                response = await self._search_vacancies_page(hh_filters, page)
                 vacancies = response.get('items', [])
                 if not vacancies:
                     break
@@ -705,7 +626,7 @@ class HHAPIParser:
                         return
                     if vacancy['id'] not in self.seen_vacancy_ids:
                         self.seen_vacancy_ids.add(vacancy['id'])
-                        record = await self._convert_to_vacancy_record(vacancy)
+                        record = await self._convert_to_vacancy_model(vacancy)
                         yield record
                         results_count += 1
 
@@ -716,16 +637,14 @@ class HHAPIParser:
         else:
             # Need aggressive splitting strategy
             self.logger.info("Using aggressive splitting strategy")
-
-            # First try date-based splitting
             date_ranges = self._split_date_range_aggressive(
-                filters.date_from, filters.date_to)
+                hh_filters.date_from, hh_filters.date_to)
 
             for date_from, date_to in date_ranges:
                 if results_count >= max_results:
                     break
 
-                date_filters = filters.copy()
+                date_filters = hh_filters.copy()
                 date_filters.date_from = date_from
                 date_filters.date_to = date_to
 
@@ -750,7 +669,7 @@ class HHAPIParser:
                             if vacancy['id'] not in self.seen_vacancy_ids:
                                 self.seen_vacancy_ids.add(vacancy['id'])
                                 record = await self.\
-                                    _convert_to_vacancy_record(vacancy)
+                                    _convert_to_vacancy_model(vacancy)
                                 yield record
                                 results_count += 1
 
@@ -759,7 +678,6 @@ class HHAPIParser:
                             break
                         page += 1
                 else:
-                    # Need parameter-based splitting
                     self.logger.info(
                         f"Date range {date_from} to {date_to} still has "
                         f"{date_total} results, using parameter splitting")
@@ -788,7 +706,7 @@ class HHAPIParser:
                                         self.seen_vacancy_ids.add(
                                             vacancy['id'])
                                         record = await self.\
-                                            _convert_to_vacancy_record(vacancy)
+                                            _convert_to_vacancy_model(vacancy)
                                         yield record
                                         results_count += 1
 
@@ -804,30 +722,46 @@ class HHAPIParser:
                                               f"filter combination: {e}")
                             continue
 
-    async def get_vacancy_details(self, vacancy_id: str) -> Dict[str, Any]:
+    async def get_vacancy_details(
+            self, external_id: str) -> Optional[Dict[str, Any]]:
         """Get detailed information about a specific vacancy."""
-        return await self._make_request('GET', f'/vacancies/{vacancy_id}')
+        try:
+            vacancy_data = await self._make_request(
+                'GET', f'/vacancies/{external_id}')
+            return vacancy_data
+        except Exception as e:
+            self.logger.error(f"Error getting vacancy details "
+                              f"for {external_id}: {e}")
+            return None
+
+    async def cleanup(self):
+        """Cleanup resources."""
+        if self.session:
+            await self.session.close()
+            self.session = None
 
 
 async def parse_and_save_vacancies_json(
         professional_roles: List[int],
         output_file: str = 'vacancies.json',
         max_results_per_role: Optional[int] = None,
-        delay_between_roles: int = 10  # Increased default delay
+        delay_between_roles: int = 10
 ):
     """Parse vacancies for multiple professional roles and save to JSON."""
-    # Get credentials from environment variables
     client_id = os.getenv('HH_CLIENT_ID')
     client_secret = os.getenv('HH_CLIENT_SECRET')
 
     if not client_id or not client_secret:
-        raise ValueError("HH_CLIENT_ID and HH_CLIENT_SECRET "
+        raise ValueError("HH_CLIENT_ID and HH_CLIENT_SECRET"
                          "environment variables must be set")
 
-    parser = HHAPIParser(
-        client_id=client_id,
-        client_secret=client_secret
+    config = ParserConfig(
+        max_results_per_batch=100,
+        delay_between_requests=0.2,
+        output_directory="parsed_data"
     )
+
+    parser = HHAPIParser(config=config)
 
     all_vacancies = []
     failed_roles = []
@@ -839,8 +773,19 @@ async def parse_and_save_vacancies_json(
                 logging.info(f"Processing role {i + 1}/"
                              f"{len(professional_roles)}: {role_id}")
 
-                filters = VacancyFilters(
-                    professional_role=role_id,
+                location = BackendLocation(region="")
+                specialization = Specialization(
+                    specialization=str(role_id),
+                    specialization_id=role_id
+                )
+
+                filters = VacancyFilter(
+                    title="",
+                    salary_min=None,
+                    salary_max=None,
+                    experience_categories=[],
+                    location=location,
+                    specialization=specialization,
                     date_from=datetime.now() - timedelta(days=30),
                     date_to=datetime.now()
                 )
@@ -848,9 +793,9 @@ async def parse_and_save_vacancies_json(
                 role_vacancies = []
                 role_start_time = time.time()
 
-                async for vacancy_record in parser.search_all_vacancies(
+                async for vacancy_record in parser.search_vacancies(
                         filters, max_results_per_role):
-                    role_vacancies.append(vacancy_record.to_dict())
+                    role_vacancies.append(vacancy_record.dict())
 
                 all_vacancies.extend(role_vacancies)
 
@@ -862,12 +807,8 @@ async def parse_and_save_vacancies_json(
                              f"{len(all_vacancies)} vacancies, "
                              f"{len(parser.seen_vacancy_ids)} unique")
 
-                # Adaptive delay based on performance
-                if role_elapsed < 30:  # If too fast, increase delay
-                    delay = delay_between_roles * 1.5
-                else:
-                    delay = delay_between_roles
-
+                delay = delay_between_roles * 1.5 \
+                    if role_elapsed < 30 else delay_between_roles
                 logging.info(f"Waiting {delay}s before next role...")
                 await asyncio.sleep(delay)
 
@@ -922,6 +863,5 @@ if __name__ == "__main__":
     asyncio.run(parse_and_save_vacancies_json(
         test_roles,
         'test_vacancies.json',
-        max_results_per_role=100,  # Limited for testing
-        delay_between_roles=15  # Conservative delay for testing
+        delay_between_roles=10  # Conservative delay for testing
     ))
