@@ -6,8 +6,6 @@ import {
     DialogHeader,
     DialogTitle,
     DialogDescription,
-    DialogFooter,
-    DialogClose,
 } from '@/components/ui/dialog';
 import { getVacancyById } from '@/api/vacancies.ts';
 
@@ -27,6 +25,30 @@ function formatDate(dateString: string): string {
         year: 'numeric',
     });
 }
+type VacancyDetails = {
+    id: number | string;
+    title: string;
+    company?: string;
+    location?: {
+        region?: string;
+    };
+    salary?: {
+        value?: number;
+        currency?: string;
+        type?: string;
+    };
+    experience_category?: {
+        name?: string;
+    };
+    specialization?: {
+        specialization?: string;
+    };
+    published_at?: {
+        time_stamp?: string;
+    };
+    description?: string;
+    url?: string;
+};
 
 export const VacancyCard: React.FC<VacancyCardProps> = ({
     id,
@@ -36,9 +58,7 @@ export const VacancyCard: React.FC<VacancyCardProps> = ({
     salary,
 }) => {
     const [open, setOpen] = useState(false);
-    // TODO: ГЛЕБ УБЕРИ ANY
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [details, setDetails] = useState<any>(null);
+    const [details, setDetails] = useState<VacancyDetails | null>(null);
     const [loading, setLoading] = useState(false);
 
     const handleOpen = async () => {
@@ -46,11 +66,16 @@ export const VacancyCard: React.FC<VacancyCardProps> = ({
         setLoading(true);
         try {
             const res = await getVacancyById(id);
-            setDetails(res.data);
-        } catch (e) {
-            console.log(e);
+            setDetails(res.data as VacancyDetails);
+        } catch (e: unknown) {
+            if (e instanceof Error) {
+                console.log(e.message);
+            } else {
+                console.log(String(e));
+            }
             setDetails(null);
         }
+
         setLoading(false);
     };
 
@@ -104,91 +129,108 @@ export const VacancyCard: React.FC<VacancyCardProps> = ({
                     </DialogHeader>
 
                     {loading ? (
-                        <div className="text-sm">Загрузка...</div>
+                        <div className="text-sm text-muted-foreground">
+                            Загрузка...
+                        </div>
                     ) : details ? (
-                        <div className="space-y-4 text-sm">
-                            {details.salary?.value && (
-                                <div>
-                                    <span className="font-medium">
-                                        Зарплата:{' '}
-                                    </span>
-                                    {details.salary.value.toLocaleString()}{' '}
-                                    {details.salary.currency}
-                                    {details.salary.type
-                                        ? ` (${details.salary.type.toLowerCase()})`
-                                        : ''}
-                                </div>
-                            )}
-                            {details.location?.region && (
-                                <div>
-                                    <span className="font-medium">
-                                        Регион:{' '}
-                                    </span>
-                                    {details.location.region}
-                                </div>
-                            )}
-                            {details.experience_category?.name && (
-                                <div>
-                                    <span className="font-medium">Опыт: </span>
-                                    {details.experience_category.name}
-                                </div>
-                            )}
-                            {details.specialization?.specialization && (
-                                <div>
-                                    <span className="font-medium">
-                                        Специализация:{' '}
-                                    </span>
-                                    {details.specialization.specialization}
-                                </div>
-                            )}
-                            {details.published_at?.time_stamp && (
-                                <div>
-                                    <span className="font-medium">
-                                        Опубликовано:{' '}
-                                    </span>
-                                    {formatDate(
-                                        details.published_at.time_stamp,
-                                    )}
-                                </div>
-                            )}
+                        <div className="space-y-6 text-sm leading-relaxed">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {details.salary?.value && (
+                                    <div>
+                                        <div className="text-xs text-muted-foreground uppercase mb-1">
+                                            Зарплата
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span>
+                                                {details.salary.value.toLocaleString()}{' '}
+                                                {details.salary.currency}
+                                            </span>
+                                            {details.salary.type && (
+                                                <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded">
+                                                    {details.salary.type.toLowerCase()}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                                {details.location?.region && (
+                                    <div>
+                                        <div className="text-xs text-muted-foreground uppercase mb-1">
+                                            Регион
+                                        </div>
+                                        <div>{details.location.region}</div>
+                                    </div>
+                                )}
+                                {details.experience_category?.name && (
+                                    <div>
+                                        <div className="text-xs text-muted-foreground uppercase mb-1">
+                                            Опыт
+                                        </div>
+                                        <div>
+                                            {details.experience_category.name}
+                                        </div>
+                                    </div>
+                                )}
+                                {details.specialization?.specialization && (
+                                    <div>
+                                        <div className="text-xs text-muted-foreground uppercase mb-1">
+                                            Специализация
+                                        </div>
+                                        <div>
+                                            {
+                                                details.specialization
+                                                    .specialization
+                                            }
+                                        </div>
+                                    </div>
+                                )}
+                                {details.published_at?.time_stamp && (
+                                    <div>
+                                        <div className="text-xs text-muted-foreground uppercase mb-1">
+                                            Опубликовано
+                                        </div>
+                                        <div>
+                                            {formatDate(
+                                                details.published_at.time_stamp,
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
                             {details.description && (
-                                <div
-                                    className="prose prose-sm max-w-none"
-                                    style={{
-                                        color: 'var(--color-card-foreground)',
-                                    }}
-                                    dangerouslySetInnerHTML={{
-                                        __html: details.description,
-                                    }}
-                                />
+                                <div className="border rounded-md p-4 bg-muted/50 text-[var(--color-card-foreground)]">
+                                    <div
+                                        className="text-sm leading-relaxed whitespace-pre-wrap"
+                                        dangerouslySetInnerHTML={{
+                                            __html: details.description,
+                                        }}
+                                    />
+                                </div>
                             )}
+
                             {details.url && (
-                                <div>
+                                <div className="pt-2 text-end">
                                     <a
                                         href={details.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="underline"
-                                        style={{
-                                            color: 'var(--color-accent-foreground)',
-                                        }}
                                     >
-                                        Открыть вакансию на сайте
+                                        <Button
+                                            variant="default"
+                                            className="w-full"
+                                        >
+                                            Перейти на сайт вакансии
+                                        </Button>
                                     </a>
                                 </div>
                             )}
                         </div>
                     ) : (
-                        <div className="text-sm text-[var(--color-destructive)]">
+                        <div className="text-sm text-destructive">
                             Ошибка загрузки данных
                         </div>
                     )}
-
-                    <DialogFooter className="pt-4">
-                        <DialogClose asChild>
-                            <Button variant="outline">Закрыть</Button>
-                        </DialogClose>
-                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </>
