@@ -22,7 +22,7 @@ const TopPanel = () => {
             <div className="flex items-center gap-2">
                 <img src="/logo.svg" className="w-8 h-8" alt="Лого" />
                 <span className="text-xl font-semibold text-on-background">
-                    РаботаПоиск
+                    Frame
                 </span>
             </div>
 
