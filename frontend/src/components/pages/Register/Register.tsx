@@ -15,6 +15,8 @@ import { registerFormSchema } from '@/schemas/register.ts';
 import axiosInstance from '@/api';
 import TokenService from '@/api/tokens.ts';
 import { useNavigate } from 'react-router-dom';
+import { useUserInfo } from '@/hooks/useUserInfo.ts';
+import { useEffect } from 'react';
 
 const Register = () => {
     const navigate = useNavigate();
@@ -41,6 +43,14 @@ const Register = () => {
                 console.log(error);
             });
     }
+
+    const { user } = useUserInfo();
+
+    useEffect(() => {
+        if (user) {
+            navigate('/');
+        }
+    }, [navigate, user]);
 
     return (
         <Form {...form}>

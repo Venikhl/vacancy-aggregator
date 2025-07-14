@@ -16,6 +16,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LockKeyhole, User } from 'lucide-react';
 import axiosInstance from '@/api';
 import TokenService from '@/api/tokens.ts';
+import { useUserInfo } from '@/hooks/useUserInfo.ts';
+import { useEffect } from 'react';
 
 const Login = () => {
     const navigate = useNavigate();
@@ -40,6 +42,14 @@ const Login = () => {
                 console.log(error);
             });
     }
+
+    const { user } = useUserInfo();
+
+    useEffect(() => {
+        if (user) {
+            navigate('/');
+        }
+    }, [navigate, user]);
 
     return (
         <Form {...form}>
