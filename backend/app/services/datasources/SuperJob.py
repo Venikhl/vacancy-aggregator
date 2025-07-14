@@ -323,7 +323,7 @@ class SuperJobParser(VacancyParser):
 
 class ResumeScraping:
     """A class to handle the scraping of resumes."""
-    
+
     base_url = "https://www.superjob.ru/resume/"
 
     def __init__(self, speciality_name, amount=100):
@@ -563,7 +563,7 @@ async def main():
 async def save_resumes_to_json(
         resumes_data: List[List[Resume]], filename: str):
     """Save a list of lists of Resume objects to a JSON file.
-    
+
     Flattens the list and converts Resume objects to dictionaries.
     """
     flat_resumes = []
