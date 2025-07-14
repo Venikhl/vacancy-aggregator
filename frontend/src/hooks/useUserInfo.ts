@@ -11,7 +11,9 @@ export function useUserInfo() {
     const [isLoading, setIsLoading] = useState(true);
     const [isError, setIsError] = useState(false);
 
-    const [user, setUser] = useState<undefined | UserInfoResponse>();
+    const [user, setUser] = useState<null | undefined | UserInfoResponse>(
+        undefined,
+    );
 
     useEffect(() => {
         axiosInstance
@@ -19,7 +21,10 @@ export function useUserInfo() {
             .then((r) => {
                 setUser(r.data);
             })
-            .catch(() => setIsError(true))
+            .catch(() => {
+                setIsError(true);
+                setUser(null);
+            })
             .finally(() => setIsLoading(false));
     }, []);
 
