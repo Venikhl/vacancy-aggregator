@@ -207,7 +207,7 @@ class HHAuthenticationError(HHAPIError):
     pass
 
 
-class HHAPIParser(VacancyParser):
+class HHVacancyParser(VacancyParser):
     """Enhanced HH.ru API Parser with comprehensive coverage strategy."""
 
     BASE_URL = "https://api.hh.ru"
@@ -761,7 +761,7 @@ async def parse_and_save_vacancies_json(
         output_directory="parsed_data"
     )
 
-    parser = HHAPIParser(config=config)
+    parser = HHVacancyParser(config=config)
 
     all_vacancies = []
     failed_roles = []
