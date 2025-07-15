@@ -23,6 +23,20 @@ export const registerFormSchema = z
             .string()
             .min(8, 'Пароль должен содержать минимум 8 символов')
             .max(50),
+
+        birth_date: z
+            .string()
+            .regex(
+                /^\d{4}-\d{2}-\d{2}$/,
+                'Дата рождения должна быть в формате ГГГГ-ММ-ДД',
+            ),
+
+        gender: z.enum(['male', 'female'], {
+            errorMap: () => ({
+                message:
+                    'Пол должен быть либо "Мужской", либо "Женский". Вертолёт это не пол.',
+            }),
+        }),
     })
     .superRefine(({ password, confirmPassword }, ctx) => {
         if (password !== confirmPassword) {

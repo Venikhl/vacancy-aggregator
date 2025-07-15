@@ -10,13 +10,28 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
-import { Mail, User, Lock } from 'lucide-react';
+import { Mail, User, Lock, CalendarIcon } from 'lucide-react';
 import { registerFormSchema } from '@/schemas/register.ts';
 import axiosInstance from '@/api';
 import TokenService from '@/api/tokens.ts';
 import { useNavigate } from 'react-router-dom';
 import { useUserInfo } from '@/hooks/useUserInfo.ts';
 import { useEffect } from 'react';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover.tsx';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar.tsx';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 const Register = () => {
     const navigate = useNavigate();
@@ -29,6 +44,8 @@ const Register = () => {
             email: '',
             password: '',
             confirmPassword: '',
+            birth_date: '',
+            gender: undefined,
         },
     });
 
@@ -51,6 +68,10 @@ const Register = () => {
             navigate('/');
         }
     }, [navigate, user]);
+
+    useEffect(() => {
+        console.log(form.getValues());
+    }, [form]);
 
     return (
         <Form {...form}>
@@ -107,6 +128,93 @@ const Register = () => {
                                         placeholder="Почта"
                                         {...field}
                                     />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="birth_date"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button
+                                                variant="outline"
+                                                type="button"
+                                                className={cn(
+                                                    'w-full pl-3 text-left font-normal bg-foreground border rounded-md h-10 flex items-center justify-between px-3',
+                                                    !field.value &&
+                                                        'text-muted-foreground',
+                                                )}
+                                            >
+                                                {field.value
+                                                    ? format(
+                                                          new Date(field.value),
+                                                          'dd.MM.yyyy',
+                                                      )
+                                                    : 'Выберите дату рождения'}
+                                                <CalendarIcon className="ml-2 h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent
+                                        className="w-auto p-0"
+                                        align="start"
+                                    >
+                                        <Calendar
+                                            mode="single"
+                                            selected={
+                                                field.value
+                                                    ? new Date(field.value)
+                                                    : undefined
+                                            }
+                                            onSelect={(date) =>
+                                                field.onChange(
+                                                    date
+                                                        ? format(
+                                                              date,
+                                                              'yyyy-MM-dd',
+                                                          )
+                                                        : '',
+                                                )
+                                            }
+                                            captionLayout="dropdown"
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="gender"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormControl>
+                                    <Select
+                                        onValueChange={field.onChange}
+                                        value={field.value}
+                                    >
+                                        <SelectTrigger
+                                            className={cn(
+                                                'w-full bg-foreground text-on-foreground',
+                                            )}
+                                        >
+                                            <SelectValue placeholder="Выберите пол" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="male">
+                                                Мужской
+                                            </SelectItem>
+                                            <SelectItem value="female">
+                                                Женский
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
