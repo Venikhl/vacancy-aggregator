@@ -56,7 +56,7 @@ class VacancyParser(ABC):
         self.errors: List[str] = []
 
     def _setup_logger(self) -> logging.Logger:
-        """Setup logger for the parser."""
+        """Set up logger for the parser."""
         logger = logging.getLogger(f"{self.__class__.__name__}")
         logger.setLevel(getattr(logging, self.config.log_level))
 
@@ -122,7 +122,7 @@ class VacancyParser(ABC):
         filters: VacancyFilter | None,
         max_results: Optional[int] = None
     ) -> ParserResult:
-        """Main method to parse vacancies and save to JSON file."""
+        """Parse vacancies and save it to JSON file."""
         start_time = datetime.now()
         output_file = self._generate_output_filename(filters)
         vacancies = []
