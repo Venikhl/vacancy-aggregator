@@ -82,10 +82,12 @@ class SuperJobParser(VacancyParser):
 
     @property
     def parser_name(self) -> str:
+        """Return the name of the parser."""
         return "superjob_parser"
 
     @property
     def source_name(self) -> str:
+        """Return the name of the data source."""
         return "superjob.ru"
 
     async def parse_and_save(
@@ -93,7 +95,7 @@ class SuperJobParser(VacancyParser):
         filters: Optional[VacancyFilter] | None,
         max_results: Optional[int] = None
     ) -> ParserResult:
-        """Main method to parse vacancies and save to JSON file."""
+        """Parse vacancies and save it to JSON file."""
         start_time = datetime.now()
         output_file = self._generate_output_filename(filters)
 
