@@ -8,14 +8,15 @@ import asyncio
 import hashlib
 import json
 import os
-from typing import List, Optional
+from typing import List, Optional, Dict, Any, AsyncGenerator
 import httpx
 import aiofiles
 from playwright.async_api import async_playwright
+from datetime import datetime
 import re
-# from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
+from base import VacancyParser, ParserConfig, VacancyFilter, ParserResult
 from api.v1.models import (
-    Resume, Salary, Source, Location, ExperienceCategory, Education)
+    Resume, Salary, Source, Location, ExperienceCategory, Education, Vacancy)
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 catalog_dict = {
@@ -64,10 +65,10 @@ specializations = [
 default_catalogs = "33,35,66,71,427,433,276,626,329,336,347,351,481"
 
 
-class SuperJobParser:
+class SuperJobParser(VacancyParser):
     """Handle asynchronous SuperJob API interactions and data processing."""
 
-    def __init__(self):
+    def __init__(self,  config: Optional[ParserConfig] = None,):
         """Initialize the parser with an httpx AsyncClient and headers."""
         self.headers = {
             "X-Api-App-Id": (
@@ -77,25 +78,29 @@ class SuperJobParser:
         }
         self.client = httpx.AsyncClient(timeout=10)
 
-    async def close(self):
-        """Close the httpx AsyncClient."""
-        await self.client.aclose()
+        super().__init__(config or ParserConfig())
 
-    async def vacancy_catalog(self):
-        """Fetch and save the full catalog from SuperJob API."""
-        url = "https://api.superjob.ru/2.0/catalogues/"
-        response = await self.client.get(url)
-        await self.create_json_file("catalog.json", response, mode="w")
+    @property
+    def parser_name(self) -> str:
+        return "superjob_parser"
 
-    async def choose_catalogues(self) -> List[int]:
-        """Return predefined catalogues (user input replaced with default)."""
-        for key, value in catalog_dict.items():
-            print(key, value)
-        return [int(c) for c in default_catalogs.split(",")]
+    @property
+    def source_name(self) -> str:
+        return "superjob.ru"
 
-    async def all_vacancy_catalog(self):
-        """Fetch and save all vacancies for the predefined catalogues."""
+    async def parse_and_save(
+        self,
+        filters: Optional[VacancyFilter] | None,
+        max_results: Optional[int] = None
+    ) -> ParserResult:
+        """Main method to parse vacancies and save to JSON file."""
+        start_time = datetime.now()
+        output_file = self._generate_output_filename(filters)
+
+        self.logger.info(f"Starting {self.parser_name} parsing...")
         url = "https://api.superjob.ru/2.0/vacancies/"
+
+        """Fetch and save all vacancies for the predefined catalogues."""
         params = {
             "catalogues": default_catalogs,
             "count": 40,
@@ -112,10 +117,46 @@ class SuperJobParser:
                                              params=params)
             json_data = response.json()
             results.append(json_data)
-        async with aiofiles.open("all_vacancy_catalog.json", "w",
+        async with aiofiles.open(output_file, "a",
                                  encoding="utf-8") as file:
             await file.write(json.dumps(results, ensure_ascii=False, indent=4))
             await file.write("\n")
+        self.logger.info(f"Saved {len(results)} vacancies to {output_file}")
+        processing_time = (datetime.now() - start_time).total_seconds()
+        result = ParserResult(
+            parser_name=self.parser_name,
+            total_vacancies=len(results),
+            unique_vacancies=len(self.seen_vacancy_ids),
+            output_file=output_file,
+            processing_time=processing_time,
+            errors=self.errors.copy(),
+            metadata={
+                "filters": filters,
+                "max_results": total,
+                "timestamp": start_time.isoformat
+            }
+        )
+        self.logger.info(
+            f"Parsing completed: {len(results)}"
+            f"vacancies saved to {output_file}"
+        )
+        return result
+
+    async def cleanup(self):
+        """Close the httpx AsyncClient."""
+        await self.client.aclose()
+
+    async def vacancy_catalog(self):
+        """Fetch and save the full catalog from SuperJob API."""
+        url = "https://api.superjob.ru/2.0/catalogues/"
+        response = await self.client.get(url)
+        await self.create_json_file("catalog.json", response, mode="w")
+
+    async def choose_catalogues(self) -> List[int]:
+        """Return predefined catalogues (user input replaced with default)."""
+        for key, value in catalog_dict.items():
+            print(key, value)
+        return [int(c) for c in default_catalogs.split(",")]
 
     async def extract_data(self):
         """Load and return vacancy data from the saved JSON file."""
@@ -163,6 +204,22 @@ class SuperJobParser:
                                          params=params)
         await self.create_json_file("response.json", response)
         return response.json()
+
+    def _convert_to_vacancy_model(self, raw_data: Dict[str, Any]) -> Vacancy:
+        """Convert raw API data to Vacancy model."""
+        pass
+
+    async def get_vacancy_details(self, external_id: str) -> Optional[Vacancy]:
+        """Get detailed information about a specific vacancy."""
+        pass
+
+    async def search_vacancies(
+        self,
+        filters: VacancyFilter,
+        max_results: Optional[int] = None
+    ) -> AsyncGenerator[Vacancy, None]:
+        """Search vacancies with given filters."""
+        pass
 
     async def parse_catalog_cleaned(self):
         """Fetch, clean, and store a simplified version of the catalogues."""
@@ -402,11 +459,22 @@ class ResumeScraping:
 
 async def main():
     """Entry point for asynchronous script execution."""
-    # parser = SuperJobParser()
-    # try:
-    #     await parser.all_vacancy_catalog()
-    # finally:
-    #     await parser.close()4
+    config = ParserConfig(
+        max_results_per_batch=100,
+        delay_between_requests=0.2,
+        output_directory="parsed_data"
+    )
+    parser = SuperJobParser(config)
+    try:
+        vf = VacancyFilter(title="all", salary_min=0, salary_max=99999,
+                           experience_categories=[
+                               ExperienceCategory(name="all",
+                                                  years_of_experience=9)],
+                           location=Location(region="Russia"))
+        await parser.parse_and_save(filters=vf)
+    finally:
+
+        await parser.cleanup()
     start_time = time.time()
     all_scraped_specializations = []
     for i in specializations:
@@ -415,28 +483,7 @@ async def main():
     end_time = time.time()
     result = end_time-start_time
     print(result, "\n", result/60)
-    # await save_resumes_to_json(
-    # all_scraped_specializations, "all_scraped_resumes.json")
-    print("Hello man")
-    print("done")
 
-
-async def save_resumes_to_json(
-        resumes_data: List[List[Resume]], filename: str):
-    """Save a list of lists of Resume objects to a JSON file.
-
-    Flattens the list and converts Resume objects to dictionaries.
-    """
-    flat_resumes = []
-    for sublist in resumes_data:
-        for resume in sublist:
-            flat_resumes.append(resume.model_dump())
-
-    full_path = os.path.join(script_dir, filename)
-    async with aiofiles.open(full_path, "w", encoding="utf-8") as json_file:
-        await json_file.write(json.dumps
-                              (flat_resumes, ensure_ascii=False, indent=4))
-    print(f"All scraped resumes saved to {full_path}")
 
 if __name__ == "__main__":
     asyncio.run(main())
