@@ -5,6 +5,9 @@ interface UserInfoResponse {
     first_name: string;
     last_name: string;
     email: string;
+    gender: string;
+    profile_pic_url: string;
+    birth_date: string;
 }
 
 export function useUserInfo() {
