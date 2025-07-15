@@ -7,8 +7,10 @@ import { CommonInfo } from './components/CommonInfo';
 import { useEffect, useState } from 'react';
 import { useUserInfo } from '@/hooks/useUserInfo.ts';
 import axiosInstance from '@/api';
+import { useNavigate } from 'react-router-dom';
 
 const Settings = () => {
+    const navigate = useNavigate();
     type SettingsFormData = z.infer<typeof settingsSchema>;
 
     const { user } = useUserInfo();
@@ -32,6 +34,12 @@ const Settings = () => {
             setValues(form.getValues());
         }
     }, [user, form]);
+
+    useEffect(() => {
+        if (!user) {
+            navigate('/login');
+        }
+    }, [navigate, user]);
 
     function onSubmit(values: SettingsFormData) {
         axiosInstance
