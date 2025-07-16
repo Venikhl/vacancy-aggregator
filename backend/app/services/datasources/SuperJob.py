@@ -5,18 +5,15 @@ data asynchronously.
 """
 import time
 import asyncio
-import hashlib
 import json
 import os
 from typing import List, Optional, Dict, Any, AsyncGenerator
 import httpx
 import aiofiles
-from playwright.async_api import async_playwright
 from datetime import datetime, timedelta
-import re
 from .base import VacancyParser, ParserConfig, VacancyFilter, ParserResult
 from app.api.v1.models import (
-    Resume, Salary, Source, Location, ExperienceCategory, Vacancy)
+    Location, ExperienceCategory, Vacancy)
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 catalog_dict = {
@@ -316,7 +313,8 @@ class SuperJobParser(VacancyParser):
 #                     page.query_selector_all('div.f-test-search-result-item'))
 #                 links = []
 #                 for i in job_listings:
-#                     link_element = await i.query_selector('a[target="_blank"]')
+#                     link_element = \
+#                         await i.query_selector('a[target="_blank"]')
 #                     link = (
 #                         await link_element.get_attribute('href')
 #                         if link_element else None
@@ -351,13 +349,15 @@ class SuperJobParser(VacancyParser):
 #                                 '._2GB-\\_._3doCL._2k8ZM.rtYnN')
 #                             .inner_text())
 
-#                         loc = await page.locator('div.J\\+R2u').text_content()
+#                         loc = await page.locator('div.J\\+R2u')
+#                                     .text_content()
 #                         loc = loc.replace('\xa0', ' ')
 #                         location = Location(region=loc)
 #                         work_experience = await (
 #                             page.locator("h2.j66yb:has-text('Опыт работы')")
 #                             .text_content())
-#                         work_experience = work_experience.replace('\xa0', ' ')
+#                         work_experience = work_experience.
+#                                           replace('\xa0', ' ')
 #                         integers = re.findall(r'\d+', work_experience)
 
 #                         years_of_experience = int(
@@ -402,7 +402,8 @@ class SuperJobParser(VacancyParser):
 #                             print(e)
 #                             faculty = None
 #                         edu = Education(university=university,
-#                                         faculty=faculty, speciality=speciality)
+#                                         faculty=faculty,
+#                                         speciality=speciality)
 #                         resume = Resume(
 #                             id=int(hashlib.sha256(link.encode()).
 #                                    hexdigest(), 16),
@@ -494,10 +495,11 @@ async def main():
 
         await parser.cleanup()
     start_time = time.time()
-    all_scraped_specializations = []
+    # all_scraped_specializations = []
     for i in specializations:
-        scraper = ResumeScraping(i)
-        all_scraped_specializations.append(await scraper.scrape())
+        pass
+        # scraper = ResumeScraping(i)
+        # all_scraped_specializations.append(await scraper.scrape())
     end_time = time.time()
     result = end_time-start_time
     print(result, "\n", result/60)
