@@ -18,8 +18,8 @@ from pydantic import BaseModel, Field, field_validator
 import time
 from dotenv import load_dotenv
 
-from base import VacancyParser, ParserConfig
-from backend.app.api.v1.models import (
+from .base import VacancyParser, ParserConfig
+from app.api.v1.models import (
     Vacancy as BackendVacancy,
     Source as BackendSource,
     Company as BackendCompany,
