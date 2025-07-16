@@ -591,11 +591,9 @@ class HHVacancyParser(VacancyParser):
             text=filters.title,
             area=getattr(filters.location,
                          'region_id', None) if filters.location else None,
-            professional_role=getattr(
-                filters.specialization, 'specialization_id',
-                None) if filters.specialization else None,
-            date_from=filters.date_from,
-            date_to=filters.date_to,
+            professional_role=None,
+            date_from=filters.date_published_from,
+            date_to=filters.date_published_to,
             location=filters.location
         )
 
