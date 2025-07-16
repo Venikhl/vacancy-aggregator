@@ -181,8 +181,9 @@ class VacancyFilter(BaseModel):
     salary_max: int | None
     experience_categories: List[ExperienceCategory]
     location: Location | None
-    date_published_from: Optional[int] | None 
-    date_published_to: Optional[int] | None 
+    date_published_from: Optional[int] | None
+    date_published_to: Optional[int] | None
+
 
 class VacanciesView(BaseModel):
     """Vacancy filter, offset, and count."""
