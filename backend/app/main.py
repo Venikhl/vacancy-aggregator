@@ -6,9 +6,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from contextlib import asynccontextmanager
 from .api.v1.router import router as v1_router
-from .tasks.parsing import parse_and_store_rabotaru, \
-                           parse_and_store_hhru, \
-                           parse_and_store_superjob
+from .tasks.parsing import parse_services
 import logging
 
 scheduler = AsyncIOScheduler()
@@ -28,19 +26,9 @@ async def lifespan(app: FastAPI):
         level=logging.INFO
     )
     scheduler.add_job(
-        parse_and_store_rabotaru,
-        IntervalTrigger(days=1),
-        id="rabotaru"
-    )
-    scheduler.add_job(
-        parse_and_store_hhru,
-        IntervalTrigger(days=1),
-        id="hhru"
-    )
-    scheduler.add_job(
-        parse_and_store_superjob,
-        IntervalTrigger(days=1),
-        id="superjob"
+        parse_services,
+        IntervalTrigger(minutes=1),
+        id="parsing"
     )
 
     scheduler.start()
