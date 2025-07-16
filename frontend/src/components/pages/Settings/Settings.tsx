@@ -8,6 +8,8 @@ import { useEffect, useState } from 'react';
 import { useUserInfo } from '@/hooks/useUserInfo.ts';
 import axiosInstance from '@/api';
 import { useNavigate } from 'react-router-dom';
+import TokenService from '@/api/tokens.ts';
+import { ImageUpload } from '@/components/pages/Settings/components/CommonInfo/components/ImageUpload';
 
 const Settings = () => {
     const navigate = useNavigate();
@@ -21,7 +23,7 @@ const Settings = () => {
             firstName: '',
             lastName: '',
             birthDate: new Date(2000, 12, 31),
-            gender: 'Женский',
+            gender: 'male',
         },
     });
 
@@ -36,7 +38,7 @@ const Settings = () => {
     }, [user, form]);
 
     useEffect(() => {
-        if (!user) {
+        if (!TokenService.getLocalAccessToken()) {
             navigate('/login');
         }
     }, [navigate, user]);
@@ -46,6 +48,10 @@ const Settings = () => {
             .post('/update_me', {
                 first_name: values.firstName,
                 last_name: values.lastName,
+                birth_date: JSON.stringify(values.birthDate)
+                    .split('T')[0]
+                    .slice(1),
+                gender: values.gender,
             })
             .then(() => {
                 console.log('submitted');
@@ -63,6 +69,12 @@ const Settings = () => {
 
     return (
         <Form {...form}>
+            <h2 className="font-semibold text-3xl pl-3 mb-4">
+                Общая Информация
+            </h2>
+
+            <ImageUpload />
+
             <form onSubmit={form.handleSubmit(onSubmit)}>
                 <CommonInfo
                     form={form}

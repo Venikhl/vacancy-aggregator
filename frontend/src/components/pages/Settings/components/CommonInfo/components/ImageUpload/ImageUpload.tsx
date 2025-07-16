@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { settingsAvatarSchema } from '@/schemas/settings.ts';
+import axiosInstance from '@/api';
 
 type ImageUploadSchema = z.infer<typeof settingsAvatarSchema>;
 
@@ -23,9 +24,20 @@ const ImageUpload = () => {
 
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-    const onSubmit = (data: ImageUploadSchema) => {
+    const onSubmit = async (data: ImageUploadSchema) => {
         const file = data.image[0];
-        console.log('Отправка файла:', file);
+        const formData = new FormData();
+        formData.append('profile_pic', file);
+
+        try {
+            await axiosInstance.post('/update_profile_pic', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+        } catch (error) {
+            console.error('Ошибка загрузки изображения:', error);
+        }
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

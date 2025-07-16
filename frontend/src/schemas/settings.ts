@@ -16,10 +16,10 @@ export const settingsSchema = z.object({
     birthDate: z.date().describe('Дата Рождения'),
 
     gender: z
-        .enum(['Мужской', 'Женский', 'Другое'], {
+        .enum(['male', 'female'], {
             errorMap: () => ({ message: 'Выберите корректный гендер' }),
         })
-        .describe('Гендер'),
+        .describe('Пол'),
 });
 
 export const settingsEmailSchema = z.object({
