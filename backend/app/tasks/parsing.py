@@ -1,7 +1,9 @@
 """Tasks for parsing and loading into database."""
 
+import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database.database import get_async_session
@@ -10,16 +12,18 @@ from app.database.crud import vacancy as crud_vacancy, \
     salary_type as crud_salary_type, \
     experience_category as crud_experience_category, \
     location as crud_location, specialization as crud_specialization, \
-    employment_type as crud_employment_type, crud_vacancy_employment_type
+    employment_type as crud_employment_type
 from app.database.models import Source as DBSource, \
     Company as DBCompany, SalaryType as DBSalaryType, \
     ExperienceCategory as DBExperienceCategory, \
     Location as DBLocation, Specialization as DBSpecialization, \
     EmploymentType as DBEmploymentType, Vacancy as DBVacancy
-from app.services.datasources.rabotaru.scraper import collect_vacancies
-from app.services.datasources.HHru import HHAPIParser, VacancyFilters
+from app.services.datasources.base import ParserConfig, VacancyParser, \
+    ParserManager
+from app.services.datasources.SuperJob import SuperJobParser
+from app.services.datasources.HHru import HHVacancyParser
 from app.api.v1.models import ExperienceCategory, Location, Vacancy, \
-    Source, Company, Specialization, EmploymentType
+    Source, Company, Specialization, EmploymentType, VacancyFilter
 from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -214,7 +218,8 @@ async def store_vacancy(
     if db_specialization:
         specialization_id = db_specialization.id
     if vacancy.published_at:
-        published_at = vacancy.published_at.time_stamp
+        date_string = vacancy.published_at.time_stamp
+        published_at = datetime.strptime(date_string, "%Y-%m-%dT%H:%M:%S%z")
 
     created = await crud_vacancy.create(
         session,
@@ -237,77 +242,34 @@ async def store_vacancy(
     )
 
     for db_employment_type in db_employment_types:
-        await crud_vacancy_employment_type.create(
-            session,
-            obj_in={
-                "vacancy_id": created.id,
-                "employment_type_id": db_employment_type.id
-            }
-        )
+        created.employment_types.append(db_employment_type)
+        await session.commit()
+        await session.refresh(created)
 
     return created
 
 
-async def parse_and_store_rabotaru():
-    """Parse from rabota.ru and store into db."""
-    return  # TODO: implement the task
+async def parse_services():
+    session_gen = get_async_session()
+    session = await session_gen.__anext__()
 
-    get_session = get_async_session()
-    session = await anext(get_session)
-    try:
-        logger.info("Scheduled parsing (rabotaru) started")
-
-        vacancies = await collect_vacancies(limit=1024, concurrency=4)
-        for vacancy in vacancies:
+    parsers: List[VacancyParser] = [
+        HHVacancyParser(),
+        SuperJobParser(),
+    ]
+    date_from = datetime.now() - timedelta(days=7)
+    date_to = datetime.now()
+    filter = VacancyFilter(
+        title=None,
+        salary_min=None,
+        salary_max=None,
+        experience_categories=[],
+        location=None,
+        date_published_from=int(date_from.timestamp()),
+        date_published_to=int(date_to.timestamp())
+    )
+    for parser in parsers:
+        await parser.__aenter__()
+        async for vacancy in parser.search_vacancies(filter, 50000):
             await store_vacancy(session, vacancy)
-
-        logger.info("Scheduled parsing (rabotaru) finished")
-
-    except Exception as e:
-        logger.error(f"Scheduled task (rabotaru) failed: {e}")
-    finally:
-        await get_session.aclose()
-
-
-async def parse_and_store_hhru():
-    """Parse from hh.ru and store into db."""
-    return  # TODO: implement the task
-
-    get_session = get_async_session()
-    session = await anext(get_session)
-    settings = get_settings()
-    try:
-        logger.info("Scheduled parsing (hhru) started")
-
-        parser = HHAPIParser(settings.HH_CLIENT_ID, settings.HH_CLIENT_SECRET)
-        filters = VacancyFilters(
-            date_from=datetime.now() - timedelta(days=7),
-            date_to=datetime.now(),
-        )
-        async for vacancy in parser.search_all_vacancies(filters):
-            vac = Vacancy.model_validate(vacancy.to_dict())
-            await store_vacancy(session, vac)
-
-        logger.info("Scheduled parsing (hhru) finished")
-
-    except Exception as e:
-        logger.error(f"Scheduled task (hhru) failed: {e}")
-    finally:
-        await get_session.aclose()
-
-
-async def parse_and_store_superjob():
-    """Parse from SuperJob and store into db."""
-    return  # TODO: implement the task
-
-    get_session = get_async_session()
-    # session = await anext(get_session)
-    try:
-        logger.info("Scheduled parsing (superjob) started")
-
-        logger.info("Scheduled parsing (superjob) finished")
-
-    except Exception as e:
-        logger.error(f"Scheduled task (superjob) failed: {e}")
-    finally:
-        await get_session.aclose()
+        await parser.__aexit__()
