@@ -1,8 +1,7 @@
 """Tasks for parsing and loading into database."""
 
-import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -18,13 +17,11 @@ from app.database.models import Source as DBSource, \
     ExperienceCategory as DBExperienceCategory, \
     Location as DBLocation, Specialization as DBSpecialization, \
     EmploymentType as DBEmploymentType, Vacancy as DBVacancy
-from app.services.datasources.base import ParserConfig, VacancyParser, \
-    ParserManager
+from app.services.datasources.base import VacancyParser
 from app.services.datasources.SuperJob import SuperJobParser
 from app.services.datasources.HHru import HHVacancyParser
 from app.api.v1.models import ExperienceCategory, Location, Vacancy, \
     Source, Company, Specialization, EmploymentType, VacancyFilter
-from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
