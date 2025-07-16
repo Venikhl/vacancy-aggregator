@@ -9,7 +9,7 @@ import os
 from dataclasses import dataclass, field
 
 # Import your backend models
-from backend.app.api.v1.models import (
+from app.api.v1.models import (
     Vacancy, VacancyFilter, Source, Company, Salary,
     ExperienceCategory, Location, Specialization,
     EmploymentType, TimeStamp
