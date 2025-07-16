@@ -247,6 +247,7 @@ async def store_vacancy(
 
 
 async def parse_services():
+    """Parse and store vacancies from all services."""
     session_gen = get_async_session()
     session = await session_gen.__anext__()
 
