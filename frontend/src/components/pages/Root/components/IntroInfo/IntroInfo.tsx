@@ -8,8 +8,8 @@ const IntroInfo = () => {
                     Объединяем возможности
                 </h1>
                 <p className="text-secondary mb-6">
-                    Donec gravida, urna vitae tincidunt gravida, dui lectus
-                    finibus erat, nec vehicula urna sem quis dui.
+                    Когда всё работает - ты просто выбираешь.<br></br>
+                    Остальное мы уже сделали.
                 </p>
                 <Button className="bg-primary hover:bg-primary/90 text-on-primary rounded-full px-6 py-2">
                     Регистрация
@@ -36,9 +36,9 @@ const IntroInfo = () => {
             </div>
 
             <img
-                src="/planet.png"
-                alt="Планета"
-                className="absolute right-[-100px] top-[-80px] w-[900px] h-[900px] object-contain z-0 opacity-90 transform scale-x-[-1] pointer-events-none select-none"
+                src="/envelope.png"
+                alt="Письмо"
+                className="absolute right-[-10px] top-[-20px] w-[700px] h-[700px] object-contain z-0 opacity-90 transform pointer-events-none select-none"
             />
         </div>
     );
