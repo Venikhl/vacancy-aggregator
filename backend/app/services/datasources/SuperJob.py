@@ -16,7 +16,8 @@ from datetime import datetime, timedelta
 import re
 from base import VacancyParser, ParserConfig, VacancyFilter, ParserResult
 from api.v1.models import (
-    Resume, Salary, Source, Location, ExperienceCategory, Education, Vacancy)
+    Resume, Salary, Source, Location, ExperienceCategory, Education,
+    Vacancy, Company, Specialization, EmploymentType, TimeStamp)
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 catalog_dict = {
@@ -226,8 +227,73 @@ class SuperJobParser(VacancyParser):
         filters: VacancyFilter,
         max_results: Optional[int] = None
     ) -> AsyncGenerator[Vacancy, None]:
-        """Search vacancies with given filters."""
-        pass
+        """Search vacancies with given filters, yielding each vacancy."""
+        url = "https://api.superjob.ru/2.0/vacancies/"
+        params = {
+            "catalogues": default_catalogs,
+            "count": 40,
+            "town": filters.location.region,
+            "payment_from": filters.salary_min,
+            "payment_to": filters.salary_max,
+            "experience": filters.experience_categories[0].years_of_experience,
+            "date_published_from": filters.date_published_from,
+            "date_published_to": filters.date_published_to
+        }
+
+        response = await self.client.get(
+            url, headers=self.headers, params=params)
+        json_data = response.json()
+        total = json_data["total"]
+        amount = total // 40 + (1 if total % 40 else 0)
+
+        yielded_count = 0
+
+        for page_num in range(amount):
+            if max_results is not None and yielded_count >= max_results:
+                break
+
+            params["page"] = page_num
+            response = await self.client.get(
+                url, headers=self.headers, params=params)
+            json_data = response.json()
+
+            for vacancy_data in json_data["objects"]:
+                if max_results is not None and yielded_count >= max_results:
+                    break
+
+                try:
+                    company_name = vacancy_data["client"]["title"]
+                except (KeyError, TypeError):
+                    company_name = None
+
+                vacancy = Vacancy(
+                    id=vacancy_data["id"],
+                    external_id=vacancy_data["id_client"],
+                    source=Source(name=vacancy_data["link"]),
+                    title=vacancy_data["profession"],
+                    description=vacancy_data["vacancyRichText"],
+                    company=Company(name=company_name),
+                    salary=Salary(
+                        currency=vacancy_data["currency"],
+                        type=vacancy_data["currency"],
+                        value=vacancy_data["payment_to"]
+                    ),
+                    experience_category=ExperienceCategory(
+                        name=vacancy_data["experience"]["title"],
+                        years=vacancy_data["experience"]["title"]
+                    ),
+                    location=Location(region=vacancy_data["town"]["title"]),
+                    specialization=Specialization(
+                        specialization=vacancy_data["profession"]),
+                    employment_types=[EmploymentType(
+                        name=vacancy_data["type_of_work"]["title"])],
+                    published_at=TimeStamp(
+                        time_stamp=vacancy_data["date_published"]),
+                    contacts=vacancy_data["phone"],
+                    url=vacancy_data["link"]
+                )
+                yield vacancy
+                yielded_count += 1
 
     async def parse_catalog_cleaned(self):
         """Fetch, clean, and store a simplified version of the catalogues."""
@@ -484,6 +550,7 @@ async def main():
                            location=Location(region="Москва"),
                            date_published_from=int(date_from.timestamp()),
                            date_to=int(date_to.timestamp()))
+        await parser.search_vacancies(filters=vf)
         await parser.parse_and_save(filters=vf)
     finally:
 
