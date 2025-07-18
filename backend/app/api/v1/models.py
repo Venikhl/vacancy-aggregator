@@ -80,11 +80,14 @@ class User(BaseModel):
     gender: UserGender | None
     profile_pic_url: str | None
 
-class Education(BaseModel): 
-    university : str | None
-    faculty: str | None 
-    speciality: str | None 
-    
+
+class Education(BaseModel):
+    """Education."""
+
+    university: str | None
+    faculty: str | None
+    speciality: str | None
+
 
 class Salary(BaseModel):
     """Salary."""
@@ -151,7 +154,7 @@ class ExperienceCategory(BaseModel):
     """Experience category."""
 
     name: str
-    years_of_experience: int| str | None = None
+    years_of_experience: int | str | None = None
 
 
 class Location(BaseModel):

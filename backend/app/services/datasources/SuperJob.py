@@ -240,10 +240,11 @@ class SuperJobParser(VacancyParser):
             "date_published_to": filters.date_published_to
         }
 
-        response = await self.client.get(url, headers=self.headers, params=params)
+        response = await self.client.get(
+            url, headers=self.headers, params=params)
         json_data = response.json()
         total = json_data["total"]
-        amount = total // 40 + (1 if total % 40 else 0)  
+        amount = total // 40 + (1 if total % 40 else 0)
 
         yielded_count = 0
 
@@ -252,7 +253,8 @@ class SuperJobParser(VacancyParser):
                 break
 
             params["page"] = page_num
-            response = await self.client.get(url, headers=self.headers, params=params)
+            response = await self.client.get(
+                url, headers=self.headers, params=params)
             json_data = response.json()
 
             for vacancy_data in json_data["objects"]:
