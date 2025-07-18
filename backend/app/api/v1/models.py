@@ -80,6 +80,11 @@ class User(BaseModel):
     gender: UserGender | None
     profile_pic_url: str | None
 
+class Education(BaseModel): 
+    university : str | None
+    faculty: str | None 
+    speciality: str | None 
+    
 
 class Salary(BaseModel):
     """Salary."""
@@ -139,14 +144,14 @@ class Source(BaseModel):
 class Company(BaseModel):
     """Company."""
 
-    name: str
+    name: str | None
 
 
 class ExperienceCategory(BaseModel):
     """Experience category."""
 
     name: str
-    years_of_experience: int | None = None
+    years_of_experience: int| str | None = None
 
 
 class Location(BaseModel):
@@ -170,7 +175,7 @@ class EmploymentType(BaseModel):
 class TimeStamp(BaseModel):
     """Timestamp."""
 
-    time_stamp: str
+    time_stamp: str | int
 
 
 class VacancyFilter(BaseModel):
@@ -196,7 +201,7 @@ class Vacancy(BaseModel):
     """Complete representation of vacancy."""
 
     id: int
-    external_id: str
+    external_id: str | int
     source: Source | None = None
     title: str
     description: str | None = None
