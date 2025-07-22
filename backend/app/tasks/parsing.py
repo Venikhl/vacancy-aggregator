@@ -267,7 +267,15 @@ async def parse_services():
         date_published_to=int(date_to.timestamp())
     )
     for parser in parsers:
+        logger.info(f"Running parser `{parser.parser_name}`")
         await parser.__aenter__()
-        async for vacancy in parser.search_vacancies(filter, 50000):
-            await store_vacancy(session, vacancy)
+        async for vacancy in parser.search_vacancies(filter, 200):
+            try:
+                await store_vacancy(session, vacancy)
+            except Exception as e:
+                logger.error(f"Failed to store vacancy: {e}")
         await parser.__aexit__()
+
+
+async def cleanup():
+    pass
