@@ -11,10 +11,10 @@ import os
 from typing import List, Optional, Dict, Any, AsyncGenerator
 import httpx
 import aiofiles
-import hashlib
 from playwright.async_api import async_playwright
-from api.v1.models import Resume, Salary, Source, Location, ExperienceCategory
 import re
+from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
+from api.v1.models import Resume, Salary, Source, Location, ExperienceCategory, Education
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 catalog_dict = {
@@ -319,17 +319,18 @@ class SuperJobParser(VacancyParser):
             await json_file.write(json.dumps(parsed_cleaned,
                                              ensure_ascii=False, indent=4))
 
+
 class ResumeScraping:
     base_url = "https://www.superjob.ru/resume/"
 
-    def __init__(self, speciality_name, amount):
+    def __init__(self, speciality_name, amount=100):
         self.speciality_name = speciality_name
         self.amount = amount
 
     async def scrape(self):
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=False)
-            page = await browser.new_page()
+            page = await browser.new_page(locale='ru-RU')
             await page.goto(self.base_url)
             await page.fill('input[name="keywords"]', self.speciality_name)
             await page.click('button#searchByHintSelect-input')
@@ -339,16 +340,8 @@ class ResumeScraping:
             print(current_url)
             await asyncio.sleep(3)
 
-<<<<<<< HEAD
-            await asyncio.sleep(5)
-
             page_link_elements = await page.query_selector_all('a[class*="f-test-link-"][title]:not([title="дальше"])')
 
-
-=======
-            page_link_elements = await page.query_selector_all('a[class*="f-test-link-"][title]:not([title="дальше"])')
-
->>>>>>> d19142b (feat(resume):  added scraping of all search results)
             max_page_number = 1
 
             if page_link_elements:
@@ -364,7 +357,7 @@ class ResumeScraping:
             print(f"Total pages found: {max_page_number}")
 
             all_scraped_data = []
-
+            outpub_json_file = "scraped_resumes.json"
             for i in range(1, min(max_page_number + 1, self.amount + 1)):
                 print(f"Scraping page {i}...")
 <<<<<<< HEAD
@@ -382,8 +375,7 @@ class ResumeScraping:
                     print(next_page_selector)
                     await page.goto(next_page_selector)
                     await asyncio.sleep(2)
-
->>>>>>> d19142b (feat(resume):  added scraping of all search results)
+                # here makes the banner that the page haven't found : https://kazan.superjob.ru/resume/programmist.html&page=1
                 job_listings = await page.query_selector_all('div.f-test-search-result-item')
                 links = []
                 for i in job_listings:
@@ -394,7 +386,9 @@ class ResumeScraping:
                 for link in links:
                     try:
                         await page.goto(link)
-                        job_title = await page.locator('h1.VB8-V._3R5DT._3doCL.eFbGk').text_content()
+                        # job_title = await page.locator('h1.VB8-V._3R5DT._3doCL.eFbGk').text_content()
+                        job_title = await page.locator('h1.VB8-V.ctqmt.cZS-k._2LZex').text_content()
+
                         salary = await page.locator('span._3R5DT._3doCL._1taY2').first.text_content()
                         try:
                             amount = int(re.sub(r'[^\d]', '', salary))
@@ -427,7 +421,20 @@ class ResumeScraping:
                         citizenship_value = citizenship_label.locator(
                             'xpath=following-sibling::div[1]/span').first
                         citizenship = await citizenship_value.text_content()
-
+                        try:
+                            university = await page.locator("div._2kCWp h3._1YFl7 a").text_content()
+                        except :
+                            university = None
+                        try:
+                            speciality = await page.locator("span._2oAaj span:has-text('Специальность') > a.D-DFe").inner_text()
+                        except:
+                            speciality = None
+                        try:
+                            faculty = await page.locator("span._2oAaj span:has-text('Факультет') > a.D-DFe").inner_text()
+                        except Exception as e:
+                            print(e)
+                            faculty = None
+                        edu = Education(university=university, faculty=faculty, speciality=speciality)
                         resume = Resume(
                             id=int(hashlib.md5(link.encode()).hexdigest(), 16),
                             external_id=link.split(
@@ -439,8 +446,10 @@ class ResumeScraping:
                             age_info=age_info,
                             experience_category=exp_cat,
                             citizenship=citizenship,
-                            employment=employment
+                            employment=employment,
+                            education=edu,
                         )
+                        print(f"resume: {resume}")
                         # scraped_item = {
                         #     "Education": education_list,
                         #     "Foreign Languages": languages,
@@ -455,39 +464,46 @@ class ResumeScraping:
                     print(
                         f"Reached desired amount of {self.amount} items. Stopping scrape.")
                     break
+            serializable_data = []
+            for resume in all_scraped_data:
+                resume_dict = {
+                    "id": resume.id,
+                    "external_id": resume.external_id,
+                    "source": {"name": resume.source.name},
+                    "title": resume.title,
+                    "salary": {
+                        "type": resume.salary.type,
+                        "currency": resume.salary.currency,
+                        "value": resume.salary.value
+                    },
+                    "location": {"region": resume.location.region},
+                    "age_info": resume.age_info,
+                    "experience_category": {
+                        "name": resume.experience_category.name,
+                        "years_of_experience": resume.experience_category.years_of_experience
+                    },
+                    "citizenship": resume.citizenship,
+                    "employment": resume.employment,
+                    "education": resume.education
+                }
+                serializable_data.append(resume_dict)
 
+            # Save to JSON file
+            async with aiofiles.open(outpub_json_file, "a", encoding="utf-8") as file:
+                await file.write(json.dumps(serializable_data, ensure_ascii=False, indent=4))
+                await file.write("\n")
             await browser.close()
             print("Here: \n", all_scraped_data)
         return all_scraped_data
 
-<<<<<<< HEAD
-=======
-           
->>>>>>> d19142b (feat(resume):  added scraping of all search results)
+
 async def main():
     """Entry point for asynchronous script execution."""
-    config = ParserConfig(
-        max_results_per_batch=100,
-        delay_between_requests=0.2,
-        output_directory="parsed_data"
-    )
-    parser = SuperJobParser(config)
-    try:
-        # last 30 days
-        date_to = datetime.now()
-        date_from = date_to - timedelta(days=30)
-        vf = VacancyFilter(title="all", salary_min=0, salary_max=99999,
-                           experience_categories=[
-                               ExperienceCategory(name="all",
-                                                  years_of_experience=0)],
-                           location=Location(region="Москва"),
-                           date_published_from=int(date_from.timestamp()),
-                           date_to=int(date_to.timestamp()))
-        await parser.search_vacancies(filters=vf)
-        await parser.parse_and_save(filters=vf)
-    finally:
-
-        await parser.cleanup()
+    # parser = SuperJobParser()
+    # try:
+    #     await parser.all_vacancy_catalog()
+    # finally:
+    #     await parser.close()4
     start_time = time.time()
     all_scraped_specializations = []
     for i in specializations:
@@ -495,8 +511,25 @@ async def main():
         all_scraped_specializations.append(await scraper.scrape())
     end_time = time.time()
     result = end_time-start_time
-    print(result, "\n", result/60)
+    print(result,"\n", result/60)
+    # await save_resumes_to_json(all_scraped_specializations, "all_scraped_resumes.json")
+    print("Hello man")
+    print("done")
 
+async def save_resumes_to_json(resumes_data: List[List[Resume]], filename: str):
+    """
+    Saves a list of lists of Resume objects to a JSON file.
+    Flattens the list and converts Resume objects to dictionaries.
+    """
+    flat_resumes = []
+    for sublist in resumes_data:
+        for resume in sublist:
+            flat_resumes.append(resume.model_dump())
+
+    full_path = os.path.join(script_dir, filename)
+    async with aiofiles.open(full_path, "w", encoding="utf-8") as json_file:
+        await json_file.write(json.dumps(flat_resumes, ensure_ascii=False, indent=4))
+    print(f"All scraped resumes saved to {full_path}")
 
 if __name__ == "__main__":
     asyncio.run(main())
