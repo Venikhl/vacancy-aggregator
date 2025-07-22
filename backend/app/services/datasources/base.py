@@ -146,6 +146,15 @@ class BaseParser(ABC):
 class VacancyParser(BaseParser):
     """Abstract base class for all vacancy parsers."""
 
+    def __init__(self, config: ParserConfig):
+        """Initialize the vacancy parser with configuration.
+
+        Args:
+            config (ParserConfig): Parser configuration settings.
+        """
+        super().__init__(config)
+        self.seen_vacancy_ids: set = set()
+
     @abstractmethod
     async def search_vacancies(
         self,
