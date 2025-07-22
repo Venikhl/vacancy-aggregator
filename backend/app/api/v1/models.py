@@ -154,7 +154,7 @@ class ExperienceCategory(BaseModel):
     """Experience category."""
 
     name: str
-    years_of_experience: int | str | None = None
+    years_of_experience: int | None = None
 
 
 class Location(BaseModel):
