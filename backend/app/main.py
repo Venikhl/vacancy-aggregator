@@ -16,7 +16,6 @@ scheduler = AsyncIOScheduler()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-<<<<<<< HEAD
     """
     Define the application lifespan.
 
@@ -28,9 +27,6 @@ async def lifespan(app: FastAPI):
         filename="vacancy-aggregator-backend.log",
         level=logging.INFO
     )
-=======
-    logging.basicConfig(filename="vacancy-aggregator-backend.log", level=logging.INFO)
->>>>>>> 8f167ae (feat: implement scheduling)
     scheduler.add_job(
         parse_and_store_rabotaru,
         IntervalTrigger(days=1),
