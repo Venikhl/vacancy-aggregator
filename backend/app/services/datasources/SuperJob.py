@@ -5,15 +5,19 @@ data asynchronously.
 """
 import time
 import asyncio
+import hashlib
 import json
 import os
 from typing import List, Optional, Dict, Any, AsyncGenerator
 import httpx
 import aiofiles
+from playwright.async_api import async_playwright
 from datetime import datetime, timedelta
-from .base import VacancyParser, ParserConfig, VacancyFilter, ParserResult
-from app.api.v1.models import (
-    Location, ExperienceCategory, Vacancy)
+import re
+from base import VacancyParser, ParserConfig, VacancyFilter, ParserResult
+from api.v1.models import (
+    Resume, Salary, Source, Location, ExperienceCategory, Education,
+    Vacancy, Company, Specialization, EmploymentType, TimeStamp)
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 catalog_dict = {
@@ -76,12 +80,6 @@ class SuperJobParser(VacancyParser):
         self.client = httpx.AsyncClient(timeout=10)
 
         super().__init__(config or ParserConfig())
-
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(self):
-        return self
 
     @property
     def parser_name(self) -> str:
@@ -229,8 +227,73 @@ class SuperJobParser(VacancyParser):
         filters: VacancyFilter,
         max_results: Optional[int] = None
     ) -> AsyncGenerator[Vacancy, None]:
-        """Search vacancies with given filters."""
-        pass
+        """Search vacancies with given filters, yielding each vacancy."""
+        url = "https://api.superjob.ru/2.0/vacancies/"
+        params = {
+            "catalogues": default_catalogs,
+            "count": 40,
+            "town": filters.location.region,
+            "payment_from": filters.salary_min,
+            "payment_to": filters.salary_max,
+            "experience": filters.experience_categories[0].years_of_experience,
+            "date_published_from": filters.date_published_from,
+            "date_published_to": filters.date_published_to
+        }
+
+        response = await self.client.get(
+            url, headers=self.headers, params=params)
+        json_data = response.json()
+        total = json_data["total"]
+        amount = total // 40 + (1 if total % 40 else 0)
+
+        yielded_count = 0
+
+        for page_num in range(amount):
+            if max_results is not None and yielded_count >= max_results:
+                break
+
+            params["page"] = page_num
+            response = await self.client.get(
+                url, headers=self.headers, params=params)
+            json_data = response.json()
+
+            for vacancy_data in json_data["objects"]:
+                if max_results is not None and yielded_count >= max_results:
+                    break
+
+                try:
+                    company_name = vacancy_data["client"]["title"]
+                except (KeyError, TypeError):
+                    company_name = None
+
+                vacancy = Vacancy(
+                    id=vacancy_data["id"],
+                    external_id=vacancy_data["id_client"],
+                    source=Source(name=vacancy_data["link"]),
+                    title=vacancy_data["profession"],
+                    description=vacancy_data["vacancyRichText"],
+                    company=Company(name=company_name),
+                    salary=Salary(
+                        currency=vacancy_data["currency"],
+                        type=vacancy_data["currency"],
+                        value=vacancy_data["payment_to"]
+                    ),
+                    experience_category=ExperienceCategory(
+                        name=vacancy_data["experience"]["title"],
+                        years=vacancy_data["experience"]["title"]
+                    ),
+                    location=Location(region=vacancy_data["town"]["title"]),
+                    specialization=Specialization(
+                        specialization=vacancy_data["profession"]),
+                    employment_types=[EmploymentType(
+                        name=vacancy_data["type_of_work"]["title"])],
+                    published_at=TimeStamp(
+                        time_stamp=vacancy_data["date_published"]),
+                    contacts=vacancy_data["phone"],
+                    url=vacancy_data["link"]
+                )
+                yield vacancy
+                yielded_count += 1
 
     async def parse_catalog_cleaned(self):
         """Fetch, clean, and store a simplified version of the catalogues."""
@@ -260,221 +323,212 @@ class SuperJobParser(VacancyParser):
                                              ensure_ascii=False, indent=4))
 
 
-# class ResumeScraping:
-#     """A class to handle the scraping of resumes."""
+class ResumeScraping:
+    """A class to handle the scraping of resumes."""
 
-#     base_url = "https://www.superjob.ru/resume/"
+    base_url = "https://www.superjob.ru/resume/"
 
-#     def __init__(self, speciality_name, amount=100):
-#         """Initialize the ResumeScraping class."""
-#         self.speciality_name = speciality_name
-#         self.amount = amount
+    def __init__(self, speciality_name, amount=100):
+        """Initialize the ResumeScraping class."""
+        self.speciality_name = speciality_name
+        self.amount = amount
 
-#     async def scrape(self):
-#         """Scrape resumes from the source."""
-#         async with async_playwright() as p:
-#             browser = await p.chromium.launch(headless=False)
-#             page = await browser.new_page(locale='ru-RU')
-#             await page.goto(self.base_url)
-#             await page.fill('input[name="keywords"]', self.speciality_name)
-#             await page.click('button#searchByHintSelect-input')
-#             await page.click('text=Резюме')
-#             await page.click('button[type="submit"]')
-#             current_url = page.url
-#             print(current_url)
-#             await asyncio.sleep(3)
+    async def scrape(self):
+        """Scrape resumes from the source."""
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=False)
+            page = await browser.new_page(locale='ru-RU')
+            await page.goto(self.base_url)
+            await page.fill('input[name="keywords"]', self.speciality_name)
+            await page.click('button#searchByHintSelect-input')
+            await page.click('text=Резюме')
+            await page.click('button[type="submit"]')
+            current_url = page.url
+            print(current_url)
+            await asyncio.sleep(3)
 
-#             page_link_elements = await page.query_selector_all
-#             ('a[class*="f-test-link-"][title]:not([title="дальше"])')
+            page_link_elements = await page.query_selector_all
+            ('a[class*="f-test-link-"][title]:not([title="дальше"])')
 
-#             max_page_number = 1
+            max_page_number = 1
 
-#             if page_link_elements:
-#                 page_numbers = []
-#                 for element in page_link_elements:
-#                     title = await element.get_attribute('title')
-#                     if title and title.isdigit():
-#                         page_numbers.append(int(title))
+            if page_link_elements:
+                page_numbers = []
+                for element in page_link_elements:
+                    title = await element.get_attribute('title')
+                    if title and title.isdigit():
+                        page_numbers.append(int(title))
 
-#                 if page_numbers:
-#                     max_page_number = max(page_numbers)
+                if page_numbers:
+                    max_page_number = max(page_numbers)
 
-#             print(f"Total pages found: {max_page_number}")
+            print(f"Total pages found: {max_page_number}")
 
-<<<<<<< HEAD
             all_scraped_data = []
             outpub_json_file = "scraped_resumes.json"
             for i in range(1, min(max_page_number + 1, self.amount + 1)):
                 print(f"Scraping page {i}...")
-#             all_scraped_data = []
-#             outpub_json_file = "scraped_resumes.json"
-#             for i in range(1, min(max_page_number + 1, self.amount + 1)):
-#                 print(f"Scraping page {i}...")
-#                 if i >= 1:
-#                     next_page_selector = current_url+f"&page={i}"
-#                     print(next_page_selector)
-#                     await page.goto(next_page_selector)
-#                     await asyncio.sleep(2)
-#                 job_listings = await (
-#                     page.query_selector_all('div.f-test-search-result-item'))
-#                 links = []
-#                 for i in job_listings:
-#                     link_element = \
-#                         await i.query_selector('a[target="_blank"]')
-#                     link = (
-#                         await link_element.get_attribute('href')
-#                         if link_element else None
-#                     )
+                if i >= 1:
+                    next_page_selector = current_url+f"&page={i}"
+                    print(next_page_selector)
+                    await page.goto(next_page_selector)
+                    await asyncio.sleep(2)
+                job_listings = await (
+                    page.query_selector_all('div.f-test-search-result-item'))
+                links = []
+                for i in job_listings:
+                    link_element = await i.query_selector('a[target="_blank"]')
+                    link = (
+                        await link_element.get_attribute('href')
+                        if link_element else None
+                    )
 
-#                     if link:
-#                         links.append("https://www.superjob.ru" + link)
-#                 for link in links:
-#                     try:
-#                         await page.goto(link)
-#                         job_title = await (
-#                             page.locator('h1.VB8-V.ctqmt.cZS-k._2LZex')
-#                             .text_content())
+                    if link:
+                        links.append("https://www.superjob.ru" + link)
+                for link in links:
+                    try:
+                        await page.goto(link)
+                        job_title = await (
+                            page.locator('h1.VB8-V.ctqmt.cZS-k._2LZex')
+                            .text_content())
 
-#                         salary = await (
-#                             page.locator('span._3R5DT._3doCL._1taY2')
-#                             .first.text_content())
-#                         try:
-#                             amount = int(re.sub(r'[^\d]', '', salary))
-#                             currency = re.sub(
-#                                 r'[\d\s\xa0]', '', salary).strip()
-#                         except ValueError:
-#                             amount = 0
-#                             currency = salary
-#                         salary_information = Salary(
-#                             type=currency, currency=currency, value=amount)
-#                         source = Source(name=link)
+                        salary = await (
+                            page.locator('span._3R5DT._3doCL._1taY2')
+                            .first.text_content())
+                        try:
+                            amount = int(re.sub(r'[^\d]', '', salary))
+                            currency = re.sub(
+                                r'[\d\s\xa0]', '', salary).strip()
+                        except ValueError:
+                            amount = 0
+                            currency = salary
+                        salary_information = Salary(
+                            type=currency, currency=currency, value=amount)
+                        source = Source(name=link)
 
-#                         age_info = await (
-#                             page.locator(
-#                                 'span._1un4T.X9SAU.Xu7gX._1lLeK'
-#                                 '._2GB-\\_._3doCL._2k8ZM.rtYnN')
-#                             .inner_text())
+                        age_info = await (
+                            page.locator(
+                                'span._1un4T.X9SAU.Xu7gX._1lLeK'
+                                '._2GB-\\_._3doCL._2k8ZM.rtYnN')
+                            .inner_text())
 
-#                         loc = await page.locator('div.J\\+R2u')
-#                                     .text_content()
-#                         loc = loc.replace('\xa0', ' ')
-#                         location = Location(region=loc)
-#                         work_experience = await (
-#                             page.locator("h2.j66yb:has-text('Опыт работы')")
-#                             .text_content())
-#                         work_experience = work_experience.
-#                                           replace('\xa0', ' ')
-#                         integers = re.findall(r'\d+', work_experience)
+                        loc = await page.locator('div.J\\+R2u').text_content()
+                        loc = loc.replace('\xa0', ' ')
+                        location = Location(region=loc)
+                        work_experience = await (
+                            page.locator("h2.j66yb:has-text('Опыт работы')")
+                            .text_content())
+                        work_experience = work_experience.replace('\xa0', ' ')
+                        integers = re.findall(r'\d+', work_experience)
 
-#                         years_of_experience = int(
-#                             integers[0]) if integers else 0
-#                         exp_cat = ExperienceCategory(
-#                             name=work_experience,
-#                             years_of_experience=years_of_experience)
+                        years_of_experience = int(
+                            integers[0]) if integers else 0
+                        exp_cat = ExperienceCategory(
+                            name=work_experience,
+                            years_of_experience=years_of_experience)
 
-#                         employment = await (
-#                             page.locator
-#                             ('div.MokF1'
-#                              ' span._1taY2:has-text("Занятость")')
-#                             .text_content())
-#                         citizenship_label = page.locator(
-#                             'div:has-text("Гражданство")')
-#                         citizenship_value = citizenship_label.locator(
-#                             'xpath=following-sibling::div[1]/span').first
-#                         citizenship = await citizenship_value.text_content()
-#                         try:
-#                             university = await (
-#                                 page.locator("div._2kCWp h3._1YFl7 a")
-#                                 .text_content())
-#                         except Exception:
-#                             university = None
-#                         try:
-#                             speciality = await (page.locator(
-#                                 "span._2oAaj"
-#                                 " span:has-text('Специальность') > a.D-DFe")
-#                                 .inner_text())
-#                         except Exception:
-#                             speciality = None
-#                         try:
-#                             faculty = await (
-#                                 page.locator(
-#                                     "span._2oAaj "
-#                                     "span:has-text('Факультет') > a.D-DFe"
-#                                 )
-#                                 .inner_text()
-#                             )
+                        employment = await (
+                            page.locator
+                            ('div.MokF1'
+                             ' span._1taY2:has-text("Занятость")')
+                            .text_content())
+                        citizenship_label = page.locator(
+                            'div:has-text("Гражданство")')
+                        citizenship_value = citizenship_label.locator(
+                            'xpath=following-sibling::div[1]/span').first
+                        citizenship = await citizenship_value.text_content()
+                        try:
+                            university = await (
+                                page.locator("div._2kCWp h3._1YFl7 a")
+                                .text_content())
+                        except Exception:
+                            university = None
+                        try:
+                            speciality = await (page.locator(
+                                "span._2oAaj"
+                                " span:has-text('Специальность') > a.D-DFe")
+                                .inner_text())
+                        except Exception:
+                            speciality = None
+                        try:
+                            faculty = await (
+                                page.locator(
+                                    "span._2oAaj "
+                                    "span:has-text('Факультет') > a.D-DFe"
+                                )
+                                .inner_text()
+                            )
 
-#                         except Exception as e:
-#                             print(e)
-#                             faculty = None
-#                         edu = Education(university=university,
-#                                         faculty=faculty,
-#                                         speciality=speciality)
-#                         resume = Resume(
-#                             id=int(hashlib.sha256(link.encode()).
-#                                    hexdigest(), 16),
-#                             external_id=link.split(
-#                                 "/")[-2] if link != 'N/A' else "unknown",
-#                             source=source,
-#                             title=job_title,
-#                             salary=salary_information,
-#                             location=location,
-#                             age_info=age_info,
-#                             experience_category=exp_cat,
-#                             citizenship=citizenship,
-#                             employment=employment,
-#                             education=edu,
-#                         )
-#                         print(f"resume: {resume}")
-#                         # scraped_item = {
-#                         #     "Education": education_list,
-#                         #     "Foreign Languages": languages,
-#                         #     "Driver's License": license_category
-#                         # }
-#                         all_scraped_data.append(resume)
-#                     except Exception as e:
-#                         print(f"Error scraping a job listing: {e}")
-#                         continue
+                        except Exception as e:
+                            print(e)
+                            faculty = None
+                        edu = Education(university=university,
+                                        faculty=faculty, speciality=speciality)
+                        resume = Resume(
+                            id=int(hashlib.sha256(link.encode()).
+                                   hexdigest(), 16),
+                            external_id=link.split(
+                                "/")[-2] if link != 'N/A' else "unknown",
+                            source=source,
+                            title=job_title,
+                            salary=salary_information,
+                            location=location,
+                            age_info=age_info,
+                            experience_category=exp_cat,
+                            citizenship=citizenship,
+                            employment=employment,
+                            education=edu,
+                        )
+                        print(f"resume: {resume}")
+                        # scraped_item = {
+                        #     "Education": education_list,
+                        #     "Foreign Languages": languages,
+                        #     "Driver's License": license_category
+                        # }
+                        all_scraped_data.append(resume)
+                    except Exception as e:
+                        print(f"Error scraping a job listing: {e}")
+                        continue
 
-#                 if len(all_scraped_data) >= self.amount:
-#                     print(
-#                         f"Reached desired amount of {self.amount} items."
-#                         "Stopping scrape.")
-#                     break
-#             serializable_data = []
-#             for resume in all_scraped_data:
-#                 resume_dict = {
-#                     "id": resume.id,
-#                     "external_id": resume.external_id,
-#                     "source": {"name": resume.source.name},
-#                     "title": resume.title,
-#                     "salary": {
-#                         "type": resume.salary.type,
-#                         "currency": resume.salary.currency,
-#                         "value": resume.salary.value
-#                     },
-#                     "location": {"region": resume.location.region},
-#                     "age_info": resume.age_info,
-#                     "experience_category": {
-#                         "name": resume.experience_category.name,
-#                         "years_of_experience":
-#                             resume.experience_category.years_of_experience
-#                     },
-#                     "citizenship": resume.citizenship,
-#                     "employment": resume.employment,
-#                     "education": resume.education
-#                 }
-#                 serializable_data.append(resume_dict)
+                if len(all_scraped_data) >= self.amount:
+                    print(
+                        f"Reached desired amount of {self.amount} items."
+                        "Stopping scrape.")
+                    break
+            serializable_data = []
+            for resume in all_scraped_data:
+                resume_dict = {
+                    "id": resume.id,
+                    "external_id": resume.external_id,
+                    "source": {"name": resume.source.name},
+                    "title": resume.title,
+                    "salary": {
+                        "type": resume.salary.type,
+                        "currency": resume.salary.currency,
+                        "value": resume.salary.value
+                    },
+                    "location": {"region": resume.location.region},
+                    "age_info": resume.age_info,
+                    "experience_category": {
+                        "name": resume.experience_category.name,
+                        "years_of_experience":
+                            resume.experience_category.years_of_experience
+                    },
+                    "citizenship": resume.citizenship,
+                    "employment": resume.employment,
+                    "education": resume.education
+                }
+                serializable_data.append(resume_dict)
 
-#             # Save to JSON file
-#             async with aiofiles.open(
-#                     outpub_json_file, "a", encoding="utf-8") as file:
-#                 await file.write(json.dumps(
-#                     serializable_data, ensure_ascii=False, indent=4))
-#                 await file.write("\n")
-#             await browser.close()
-#             print("Here: \n", all_scraped_data)
-#         return all_scraped_data
+            # Save to JSON file
+            async with aiofiles.open(
+                    outpub_json_file, "a", encoding="utf-8") as file:
+                await file.write(json.dumps(
+                    serializable_data, ensure_ascii=False, indent=4))
+                await file.write("\n")
+            await browser.close()
+            print("Here: \n", all_scraped_data)
+        return all_scraped_data
 
 
 async def main():
@@ -496,16 +550,16 @@ async def main():
                            location=Location(region="Москва"),
                            date_published_from=int(date_from.timestamp()),
                            date_to=int(date_to.timestamp()))
+        await parser.search_vacancies(filters=vf)
         await parser.parse_and_save(filters=vf)
     finally:
 
         await parser.cleanup()
     start_time = time.time()
-    # all_scraped_specializations = []
+    all_scraped_specializations = []
     for i in specializations:
-        pass
-        # scraper = ResumeScraping(i)
-        # all_scraped_specializations.append(await scraper.scrape())
+        scraper = ResumeScraping(i)
+        all_scraped_specializations.append(await scraper.scrape())
     end_time = time.time()
     result = end_time-start_time
     print(result, "\n", result/60)
