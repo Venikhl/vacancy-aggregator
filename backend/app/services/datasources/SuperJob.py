@@ -12,7 +12,7 @@ from typing import List, Optional, Dict, Any, AsyncGenerator
 import httpx
 import aiofiles
 from playwright.async_api import async_playwright
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 from base import VacancyParser, ParserConfig, VacancyFilter, ParserResult
 from api.v1.models import (
@@ -106,6 +106,12 @@ class SuperJobParser(VacancyParser):
         params = {
             "catalogues": default_catalogs,
             "count": 40,
+            "town": filters.location.region,
+            "payment_from": filters.salary_min,
+            "payment_to": filters.salary_max,
+            "experience": filters.experience_categories[0].years_of_experience,
+            "date_published_from": filters.date_published_from,
+            "date_published_to": filters.date_published_to
         }
         response = await self.client.get(url, headers=self.headers,
                                          params=params)
@@ -478,11 +484,16 @@ async def main():
     )
     parser = SuperJobParser(config)
     try:
+        # last 30 days
+        date_to = datetime.now()
+        date_from = date_to - timedelta(days=30)
         vf = VacancyFilter(title="all", salary_min=0, salary_max=99999,
                            experience_categories=[
                                ExperienceCategory(name="all",
-                                                  years_of_experience=9)],
-                           location=Location(region="Russia"))
+                                                  years_of_experience=0)],
+                           location=Location(region="Москва"),
+                           date_published_from=int(date_from.timestamp()),
+                           date_to=int(date_to.timestamp()))
         await parser.parse_and_save(filters=vf)
     finally:
 
