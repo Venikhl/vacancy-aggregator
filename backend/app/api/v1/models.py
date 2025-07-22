@@ -192,6 +192,7 @@ class VacancyFilter(BaseModel):
     date_published_from: Optional[int] | None
     date_published_to: Optional[int] | None
 
+
 class VacanciesView(BaseModel):
     """Vacancy filter, offset, and count."""
 
