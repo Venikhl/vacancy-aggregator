@@ -77,6 +77,12 @@ class SuperJobParser(VacancyParser):
 
         super().__init__(config or ParserConfig())
 
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self):
+        return self
+
     @property
     def parser_name(self) -> str:
         """Return the name of the parser."""
