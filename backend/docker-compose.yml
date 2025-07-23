@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: vacancy_aggregator
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    depends_on:
+      - db
+    environment:
+      HOST: ${HOST}
+      APP_NAME: ${APP_NAME}
+      DATABASE_URL: postgresql+asyncpg://user:password@db:5432/vacancy_aggregator
+      JWT_KEY: ${JWT_KEY}
+      PROFILE_PICTURE_DIRECTORY: /app/static/pictures
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS}
+      HH_CLIENT_ID: ${HH_CLIENT_ID}
+      HH_CLIENT_SECRET: ${HH_CLIENT_SECRET}
+      HH_ACCESS_TOKEN: ${HH_ACCESS_TOKEN}
+    ports:
+      - "127.0.0.1:8000:8000"
+    command: >
+      sh -c "
+        uv run alembic upgrade head
+        uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+      "
+    volumes:
+      - ./static/pictures:/app/static/pictures
+
+volumes:
+  postgres_data:
