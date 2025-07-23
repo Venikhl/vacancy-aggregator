@@ -85,6 +85,7 @@ const Login = () => {
                                 <FormControl>
                                     <Input
                                         startIcon={LockKeyhole}
+                                        type="password"
                                         placeholder="Пароль"
                                         {...field}
                                     />
