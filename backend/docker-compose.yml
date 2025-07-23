@@ -28,7 +28,7 @@ services:
       HH_CLIENT_SECRET: ${HH_CLIENT_SECRET}
       HH_ACCESS_TOKEN: ${HH_ACCESS_TOKEN}
     ports:
-      - "127.0.0.1:8000:8000"
+      - "8000:8000"
     command: >
       sh -c "
         uv run alembic upgrade head
