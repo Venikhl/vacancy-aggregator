@@ -14,8 +14,8 @@ import aiofiles
 from playwright.async_api import async_playwright
 from datetime import datetime, timedelta
 import re
-from base import VacancyParser, ParserConfig, VacancyFilter, ParserResult
-from api.v1.models import (
+from .base import VacancyParser, ParserConfig, VacancyFilter, ParserResult
+from app.api.v1.models import (
     Resume, Salary, Source, Location, ExperienceCategory, Education,
     Vacancy, Company, Specialization, EmploymentType, TimeStamp)
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -80,6 +80,14 @@ class SuperJobParser(VacancyParser):
         self.client = httpx.AsyncClient(timeout=10)
 
         super().__init__(config or ParserConfig())
+
+    async def __aenter__(self):
+        """Enter async context."""
+        pass
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Exit from async context."""
+        pass
 
     @property
     def parser_name(self) -> str:
@@ -232,10 +240,12 @@ class SuperJobParser(VacancyParser):
         params = {
             "catalogues": default_catalogs,
             "count": 40,
-            "town": filters.location.region,
+            "town": filters.location.region if filters.location else None,
             "payment_from": filters.salary_min,
             "payment_to": filters.salary_max,
-            "experience": filters.experience_categories[0].years_of_experience,
+            "experience":
+                filters.experience_categories[0].years_of_experience
+                if len(filters.experience_categories) > 0 else None,
             "date_published_from": filters.date_published_from,
             "date_published_to": filters.date_published_to
         }
