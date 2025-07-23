@@ -1,6 +1,10 @@
 import { Button } from '@/components/ui/button.tsx';
+import { useUserInfo } from '@/hooks/useUserInfo.ts';
+import { Link } from 'react-router-dom';
 
 const IntroInfo = () => {
+    const { user } = useUserInfo();
+
     return (
         <div className="flex items-center justify-between px-20 py-10 relative z-10">
             <div className="max-w-xl">
@@ -11,9 +15,14 @@ const IntroInfo = () => {
                     Когда всё работает - ты просто выбираешь.<br></br>
                     Остальное мы уже сделали.
                 </p>
-                <Button className="bg-primary hover:bg-primary/90 text-on-primary rounded-full px-6 py-2">
-                    Регистрация
-                </Button>
+                {!user && (
+                    <Button
+                        asChild
+                        className="bg-primary hover:bg-primary/90 text-on-primary rounded-full px-6 py-2"
+                    >
+                        <Link to="/register">Регистрация</Link>
+                    </Button>
+                )}
 
                 <div className="mt-10 grid grid-cols-2 gap-6 text-primary">
                     <div>
