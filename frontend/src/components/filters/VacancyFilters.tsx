@@ -51,14 +51,26 @@ export const VacancyFilters: React.FC<Props> = ({
             salary_min: value.salary_min ?? 0,
             salary_max: value.salary_max ?? 15000000,
             experience_categories: (value.experience_categories ?? [])
-                .filter((v): v is { name: string } => !!v?.name)
-                .map((v) => ({ name: v.name })),
+                .filter(
+                    (
+                        v,
+                    ): v is {
+                        name: string;
+                        years_of_experience: number | null;
+                    } => !!v?.name,
+                )
+                .map((v) => ({
+                    name: v.name,
+                    years_of_experience: null, // всегда null
+                })),
             location:
                 typeof value.location === 'string'
                     ? { region: value.location }
                     : value.location?.region
                       ? { region: value.location.region }
                       : null,
+            date_published_from: null,
+            date_published_to: null,
         };
         onChange(cleaned);
         onApply();
@@ -69,6 +81,8 @@ export const VacancyFilters: React.FC<Props> = ({
         const cleaned: Filters = {
             ...filters,
             title: value.title?.trim() ?? '',
+            date_published_from: null,
+            date_published_to: null,
         };
         onChange(cleaned);
         onApply();
@@ -95,6 +109,7 @@ export const VacancyFilters: React.FC<Props> = ({
                                         {...field}
                                         placeholder="Поиск по названию вакансии"
                                         startIcon={Search}
+                                        value={field.value ?? ''}
                                     />
                                 </FormControl>
                             </FormItem>
@@ -219,7 +234,9 @@ export const VacancyFilters: React.FC<Props> = ({
                                                 inputMode="numeric"
                                                 placeholder="От"
                                                 value={
-                                                    field.value === 0
+                                                    field.value === 0 ||
+                                                    field.value === null ||
+                                                    field.value === undefined
                                                         ? ''
                                                         : field.value
                                                 }
@@ -250,7 +267,9 @@ export const VacancyFilters: React.FC<Props> = ({
                                                 inputMode="numeric"
                                                 placeholder="До"
                                                 value={
-                                                    field.value === 0
+                                                    field.value === 0 ||
+                                                    field.value === null ||
+                                                    field.value === undefined
                                                         ? ''
                                                         : field.value
                                                 }
@@ -308,7 +327,11 @@ export const VacancyFilters: React.FC<Props> = ({
                                                           )
                                                         : [
                                                               ...current,
-                                                              { name: exp },
+                                                              {
+                                                                  name: exp,
+                                                                  years_of_experience:
+                                                                      null,
+                                                              },
                                                           ];
                                                     field.onChange(newValue);
                                                 }}

@@ -3,7 +3,7 @@ import TokenService from './tokens';
 import type { Filters } from '@/types/filters';
 
 if (!import.meta.env.VITE_API_HOST) {
-  throw new Error('VITE_API_HOST is not defined in environment variables');
+    throw new Error('VITE_API_HOST is not defined in environment variables');
 }
 const API_HOST = import.meta.env.VITE_API_HOST;
 
