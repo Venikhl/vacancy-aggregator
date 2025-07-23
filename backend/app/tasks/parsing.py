@@ -248,33 +248,36 @@ async def store_vacancy(
 
 async def parse_services():
     """Parse and store vacancies from all services."""
-    session_gen = get_async_session()
-    session = await session_gen.__anext__()
+    try:
+        session_gen = get_async_session()
+        session = await session_gen.__anext__()
 
-    parsers: List[VacancyParser] = [
-        HHVacancyParser(),
-        SuperJobParser(),
-    ]
-    date_from = datetime.now() - timedelta(days=7)
-    date_to = datetime.now()
-    filter = VacancyFilter(
-        title=None,
-        salary_min=None,
-        salary_max=None,
-        experience_categories=[],
-        location=None,
-        date_published_from=int(date_from.timestamp()),
-        date_published_to=int(date_to.timestamp())
-    )
-    for parser in parsers:
-        logger.info(f"Running parser `{parser.parser_name}`")
-        await parser.__aenter__()
-        async for vacancy in parser.search_vacancies(filter, 200):
-            try:
-                await store_vacancy(session, vacancy)
-            except Exception as e:
-                logger.error(f"Failed to store vacancy: {e}")
-        await parser.__aexit__()
+        parsers: List[VacancyParser] = [
+            SuperJobParser(),
+            HHVacancyParser(),
+        ]
+        date_from = datetime.now() - timedelta(days=1)
+        date_to = datetime.now()
+        filter = VacancyFilter(
+            title=None,
+            salary_min=None,
+            salary_max=None,
+            experience_categories=[],
+            location=None,
+            date_published_from=int(date_from.timestamp()),
+            date_published_to=int(date_to.timestamp())
+        )
+        for parser in parsers:
+            logger.info(f"Running parser `{parser.parser_name}`")
+            async with parser:
+                async for vacancy in parser.search_vacancies(filter, 200):
+                    logger.info(f"Storing vacancy {vacancy}")
+                    try:
+                        await store_vacancy(session, vacancy)
+                    except Exception as e:
+                        logger.error(f"Failed to store vacancy: {e}")
+    except Exception as e:
+        logger.info(f"Something went wrong while parsing: {e}")
 
 
 async def cleanup():

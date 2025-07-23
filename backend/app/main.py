@@ -1,5 +1,6 @@
 """Entry point for vacancy-aggregator-backend application."""
 
+from sys import stdout
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -22,12 +23,12 @@ async def lifespan(app: FastAPI):
     on shutdown.
     """
     logging.basicConfig(
-        filename="vacancy-aggregator-backend.log",
+        stream=stdout,
         level=logging.INFO
     )
     scheduler.add_job(
         parse_services,
-        IntervalTrigger(minutes=1),
+        IntervalTrigger(days=1),
         id="parsing"
     )
 
