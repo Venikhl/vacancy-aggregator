@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { settingsAvatarSchema } from '@/schemas/settings.ts';
 import axiosInstance from '@/api';
+import { useUserInfo } from '@/hooks/useUserInfo.ts';
+import { replaceUrl } from '@/lib/utils.ts';
 
 type ImageUploadSchema = z.infer<typeof settingsAvatarSchema>;
 
@@ -21,6 +23,8 @@ const ImageUpload = () => {
     const form = useForm<ImageUploadSchema>({
         resolver: zodResolver(settingsAvatarSchema),
     });
+
+    const { user } = useUserInfo();
 
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
@@ -43,7 +47,21 @@ const ImageUpload = () => {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            setPreviewUrl(URL.createObjectURL(file));
+            const img = new Image();
+            img.onload = () => {
+                if (img.width === img.height) {
+                    setPreviewUrl(URL.createObjectURL(file));
+                    form.setValue('image', e.target.files);
+                    form.clearErrors('image');
+                } else {
+                    setPreviewUrl(null);
+                    form.setError('image', {
+                        type: 'manual',
+                        message: 'Пожалуйста, загрузите квадратное изображение',
+                    });
+                }
+            };
+            img.src = URL.createObjectURL(file);
         }
     };
 
@@ -58,7 +76,7 @@ const ImageUpload = () => {
                 </h3>
 
                 <img
-                    src={previewUrl ? previewUrl : '/user-avatar.png'}
+                    src={previewUrl || replaceUrl(user) || '/user-avatar.png'}
                     alt="Аватар"
                     className="w-20 h-20 rounded-full"
                 />

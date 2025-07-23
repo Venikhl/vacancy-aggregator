@@ -1,7 +1,7 @@
 import axiosInstance from '@/api';
 import { useEffect, useState } from 'react';
 
-interface UserInfoResponse {
+export interface UserInfoResponse {
     first_name: string;
     last_name: string;
     email: string;
