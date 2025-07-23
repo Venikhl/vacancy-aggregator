@@ -147,7 +147,7 @@ class Source(BaseModel):
 class Company(BaseModel):
     """Company."""
 
-    name: str | None
+    name: str
 
 
 class ExperienceCategory(BaseModel):
@@ -178,7 +178,7 @@ class EmploymentType(BaseModel):
 class TimeStamp(BaseModel):
     """Timestamp."""
 
-    time_stamp: str | int
+    time_stamp: str
 
 
 class VacancyFilter(BaseModel):
