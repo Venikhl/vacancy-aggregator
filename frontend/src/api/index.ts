@@ -1,30 +1,30 @@
 import axios from 'axios';
 import TokenService from './tokens';
+import type { Filters } from '@/types/filters';
 
-const API_BASE_URL = 'http://localhost:5173/api/v1';
+if (!import.meta.env.VITE_API_HOST) {
+    throw new Error('VITE_API_HOST is not defined in environment variables');
+}
+const API_HOST = import.meta.env.VITE_API_HOST;
+
+const API_BASE_URL = `${API_HOST}/api/v1`;
 const REFRESH_TOKEN_URL = '/refresh_token';
 
 const axiosInstance = axios.create({
     baseURL: API_BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
 });
 
 const refreshInstance = axios.create({
     baseURL: API_BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
 });
 
 axiosInstance.interceptors.request.use(
     (config) => {
         try {
             const token = TokenService.getLocalAccessToken();
-            if (token) {
-                config.headers['Authorization'] = `Bearer ${token}`;
-            }
+            if (token) config.headers['Authorization'] = `Bearer ${token}`;
             return config;
         } catch (error) {
             return Promise.reject(error);
@@ -44,9 +44,8 @@ axiosInstance.interceptors.response.use(
 
                 try {
                     const refreshToken = TokenService.getLocalRefreshToken();
-                    if (!refreshToken) {
+                    if (!refreshToken)
                         return Promise.reject('No refresh token');
-                    }
 
                     const rs = await refreshInstance.post(REFRESH_TOKEN_URL, {
                         refresh_token: refreshToken,
@@ -70,3 +69,18 @@ axiosInstance.interceptors.response.use(
 );
 
 export default axiosInstance;
+
+export const getVacancies = async (
+    offset: number,
+    count: number,
+    filters: Filters,
+) => {
+    return axiosInstance.post('/vacancies', {
+        filter: filters,
+        view: { offset, count },
+    });
+};
+
+export const getVacancyById = async (id: number | string) => {
+    return axiosInstance.get(`/vacancy/${id}`);
+};

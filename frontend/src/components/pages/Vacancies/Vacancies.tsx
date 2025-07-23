@@ -11,6 +11,8 @@ const defaultFilters: Filters = {
     salary_max: 1500000,
     experience_categories: [],
     location: null,
+    date_published_from: null,
+    date_published_to: null,
 };
 
 export const Vacancies: React.FC = () => {
