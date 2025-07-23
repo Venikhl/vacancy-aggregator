@@ -33,6 +33,8 @@ const Settings = () => {
         if (user) {
             form.setValue('firstName', user.first_name);
             form.setValue('lastName', user.last_name);
+            form.setValue('birthDate', new Date(user.birth_date));
+            form.setValue('gender', user.gender as 'male' | 'female');
             setValues(form.getValues());
         }
     }, [user, form]);

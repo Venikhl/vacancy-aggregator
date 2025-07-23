@@ -93,8 +93,12 @@ const CommonInfo = ({ form, handleSave, values }: CommonInfoProps) => {
                     <FormItem>
                         <FormControl>
                             <SettingsItem
-                                name="Гендер"
-                                value={values.gender}
+                                name="Пол"
+                                value={
+                                    values.gender === 'male'
+                                        ? 'Мужской'
+                                        : 'Женский'
+                                }
                                 onSave={handleSave}
                             >
                                 <Select
