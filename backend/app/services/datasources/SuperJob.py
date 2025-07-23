@@ -82,9 +82,11 @@ class SuperJobParser(VacancyParser):
         super().__init__(config or ParserConfig())
 
     async def __aenter__(self):
+        """Enter async context."""
         pass
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Exit from async context."""
         pass
 
     @property
@@ -241,7 +243,9 @@ class SuperJobParser(VacancyParser):
             "town": filters.location.region if filters.location else None,
             "payment_from": filters.salary_min,
             "payment_to": filters.salary_max,
-            "experience": filters.experience_categories[0].years_of_experience if len(filters.experience_categories) > 0 else None,
+            "experience":
+                filters.experience_categories[0].years_of_experience
+                if len(filters.experience_categories) > 0 else None,
             "date_published_from": filters.date_published_from,
             "date_published_to": filters.date_published_to
         }

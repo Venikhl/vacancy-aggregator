@@ -278,7 +278,3 @@ async def parse_services():
                         logger.error(f"Failed to store vacancy: {e}")
     except Exception as e:
         logger.info(f"Something went wrong while parsing: {e}")
-
-
-async def cleanup():
-    pass
