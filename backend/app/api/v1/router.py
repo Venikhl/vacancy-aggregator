@@ -270,6 +270,10 @@ async def update_profile_pic(
     save_path = os.path.join(settings.PROFILE_PICTURE_DIRECTORY, filename)
 
     rgb_image = image.convert("RGB")
+
+    if os.path.exists(save_path):
+        os.remove(save_path)
+
     rgb_image.save(save_path, "JPEG", quality=85)
 
     return Response(status_code=200)
