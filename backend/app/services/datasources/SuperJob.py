@@ -561,7 +561,7 @@ async def main():
                            date_published_from=int(date_from.timestamp()),
                            date_to=int(date_to.timestamp()))
         async for vacancy in parser.search_vacancies(filters=vf):
-            print(vacancy) 
+            print(vacancy)
         await parser.parse_and_save(filters=vf)
     finally:
 
