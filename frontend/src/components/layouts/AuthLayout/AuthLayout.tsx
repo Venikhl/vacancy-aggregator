@@ -46,7 +46,7 @@ const AuthLayout = () => {
                 </Link>
                 <div
                     className={cn(
-                        'bg-background w-full max-w-[565px] h-[635px] rounded-[25px]',
+                        'bg-background w-full max-w-[565px] h-[735px] rounded-[25px]',
                         'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2',
                         'flex flex-col justify-center items-center py-[81px] px-[48px]',
                     )}

@@ -7,9 +7,7 @@ import json
 import logging
 import os
 from dataclasses import dataclass, field
-
-# Import your backend models
-from backend.app.api.v1.models import (
+from app.api.v1.models import (
     Vacancy, VacancyFilter, Source, Salary,
     ExperienceCategory, Location, Specialization,
     EmploymentType, TimeStamp
@@ -279,3 +277,4 @@ class ParserManager:
     def list_parsers(self) -> List[str]:
         """List all available parser names."""
         return [parser.parser_name for parser in self.parsers]
+ 

@@ -5,13 +5,18 @@ interface UserInfoResponse {
     first_name: string;
     last_name: string;
     email: string;
+    gender: string;
+    profile_pic_url: string;
+    birth_date: string;
 }
 
 export function useUserInfo() {
     const [isLoading, setIsLoading] = useState(true);
     const [isError, setIsError] = useState(false);
 
-    const [user, setUser] = useState<undefined | UserInfoResponse>();
+    const [user, setUser] = useState<null | undefined | UserInfoResponse>(
+        undefined,
+    );
 
     useEffect(() => {
         axiosInstance
@@ -19,7 +24,10 @@ export function useUserInfo() {
             .then((r) => {
                 setUser(r.data);
             })
-            .catch(() => setIsError(true))
+            .catch(() => {
+                setIsError(true);
+                setUser(null);
+            })
             .finally(() => setIsLoading(false));
     }, []);
 

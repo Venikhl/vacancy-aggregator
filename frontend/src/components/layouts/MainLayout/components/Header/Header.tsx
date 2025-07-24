@@ -1,7 +1,9 @@
 import { Button } from '@/components/ui/button.tsx';
 import { Link } from 'react-router-dom';
+import { useUserInfo } from '@/hooks/useUserInfo.ts';
+import TokenService from '@/api/tokens.ts';
 
-const TopPanel = () => {
+const Header = () => {
     const navLinks = [
         {
             title: 'Главная',
@@ -16,6 +18,13 @@ const TopPanel = () => {
             href: '/about',
         },
     ];
+
+    const { user } = useUserInfo();
+
+    const LogOut = () => {
+        TokenService.removeTokens();
+        window.location.reload();
+    };
 
     return (
         <div className="flex justify-between items-center px-8 py-4 z-10 relative">
@@ -38,11 +47,18 @@ const TopPanel = () => {
                 ))}
             </div>
 
-            <Button className="bg-primary hover:bg-primary/80 text-on-primary rounded-full px-6 py-1">
-                Войти
-            </Button>
+            {user ? (
+                <Button onClick={LogOut}>Выйти</Button>
+            ) : (
+                <Button
+                    asChild
+                    className="bg-primary hover:bg-primary/80 text-on-primary rounded-full px-6 py-1"
+                >
+                    <Link to="/login">Войти</Link>
+                </Button>
+            )}
         </div>
     );
 };
 
-export default TopPanel;
+export default Header;

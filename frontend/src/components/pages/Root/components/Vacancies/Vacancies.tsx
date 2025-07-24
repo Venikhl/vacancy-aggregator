@@ -16,6 +16,8 @@ const Vacancies = () => {
                 salary_max: 15000000,
                 experience_categories: [],
                 location: null,
+                date_published_from: null,
+                date_published_to: null,
             },
             20,
         );
