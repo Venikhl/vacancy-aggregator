@@ -560,7 +560,8 @@ async def main():
                            location=Location(region="Москва"),
                            date_published_from=int(date_from.timestamp()),
                            date_to=int(date_to.timestamp()))
-        await parser.search_vacancies(filters=vf)
+        async for vacancy in parser.search_vacancies(filters=vf):
+            print(vacancy)
         await parser.parse_and_save(filters=vf)
     finally:
 
