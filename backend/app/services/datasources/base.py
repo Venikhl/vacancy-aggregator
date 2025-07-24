@@ -277,4 +277,3 @@ class ParserManager:
     def list_parsers(self) -> List[str]:
         """List all available parser names."""
         return [parser.parser_name for parser in self.parsers]
- 
