@@ -187,8 +187,8 @@ class VacancyParser(BaseParser):
 
         try:
             async for vacancy in self.search_vacancies(filters, max_results):
-                if vacancy.external_id not in self.seen_ids:
-                    self.seen_ids.add(vacancy.external_id)
+                if vacancy.external_id not in self.seen_vacancy_ids:
+                    self.seen_vacancy_ids.add(vacancy.external_id)
                     vacancies.append(vacancy.dict())
 
                     if len(vacancies) % 100 == 0:
@@ -202,7 +202,7 @@ class VacancyParser(BaseParser):
             return ParserResult(
                 parser_name=self.parser_name,
                 total_vacancies=len(vacancies),
-                unique_vacancies=len(self.seen_ids),
+                unique_vacancies=len(self.seen_vacancy_ids),
                 output_file=output_file,
                 processing_time=processing_time,
                 errors=self.errors.copy(),
@@ -222,6 +222,15 @@ class VacancyParser(BaseParser):
 
 class ResumeParser(BaseParser):
     """Abstract base class for all resume parsers."""
+
+    def __init__(self, config: ParserConfig):
+        """Initialize the resume parser with configuration.
+
+        Args:
+            config (ParserConfig): Parser configuration settings.
+        """
+        super().__init__(config)
+        self.seen_resume_ids: set = set()
 
     @abstractmethod
     async def search_resumes(
@@ -256,8 +265,8 @@ class ResumeParser(BaseParser):
 
         try:
             async for resume in self.search_resumes(filters, max_results):
-                if resume.external_id not in self.seen_ids:
-                    self.seen_ids.add(resume.external_id)
+                if resume.external_id not in self.seen_resume_ids:
+                    self.seen_resume_ids.add(resume.external_id)
                     resumes.append(resume.dict())
 
                     if len(resumes) % 100 == 0:
@@ -270,7 +279,7 @@ class ResumeParser(BaseParser):
             return ParserResult(
                 parser_name=self.parser_name,
                 total_vacancies=len(resumes),
-                unique_vacancies=len(self.seen_ids),
+                unique_vacancies=len(self.seen_resume_ids),
                 output_file=output_file,
                 processing_time=processing_time,
                 errors=self.errors.copy(),
