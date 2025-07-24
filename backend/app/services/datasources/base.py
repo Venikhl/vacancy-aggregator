@@ -10,7 +10,8 @@ from dataclasses import dataclass, field
 from app.api.v1.models import (
     Vacancy, VacancyFilter, Source, Salary,
     ExperienceCategory, Location, Specialization,
-    EmploymentType, TimeStamp
+    EmploymentType, TimeStamp, ResumeFilter,
+    Resume
 )
 
 
@@ -201,6 +202,74 @@ class VacancyParser(BaseParser):
             return ParserResult(
                 parser_name=self.parser_name,
                 total_vacancies=len(vacancies),
+                unique_vacancies=len(self.seen_ids),
+                output_file=output_file,
+                processing_time=processing_time,
+                errors=self.errors.copy(),
+                metadata={
+                    "filters": filters.dict() if filters else None,
+                    "max_results": max_results,
+                    "timestamp": start_time.isoformat()
+                }
+            )
+
+        except Exception as e:
+            self.logger.error(f"Error during parsing: {e}")
+            self.errors.append(str(e))
+            raise
+
+
+
+class ResumeParser(BaseParser):
+    """Abstract base class for all resume parsers."""
+
+    @abstractmethod
+    async def search_resumes(
+        self,
+        filters: ResumeFilter,
+        max_results: Optional[int] = None
+    ) -> AsyncGenerator[Resume, None]:
+        """Search resumes with given filters."""
+        pass
+
+    @abstractmethod
+    async def get_resume_details(self, external_id: str) -> Optional[Resume]:
+        """Get detailed information about a specific resume."""
+        pass
+
+    @abstractmethod
+    def _convert_to_resume_model(self, raw_data: Dict[str, Any]) -> Resume:
+        """Convert raw data to Resume model."""
+        pass
+
+    async def parse_and_save(
+        self,
+        filters: ResumeFilter | None,
+        max_results: Optional[int] = None
+    ) -> ParserResult:
+        """Parse resumes and save to JSON file."""
+        start_time = datetime.now()
+        output_file = self._generate_output_filename(filters, "_resumes")
+        resumes = []
+
+        self.logger.info(f"Starting {self.parser_name} resume parsing...")
+
+        try:
+            async for resume in self.search_resumes(filters, max_results):
+                if resume.external_id not in self.seen_ids:
+                    self.seen_ids.add(resume.external_id)
+                    resumes.append(resume.dict())
+
+                    if len(resumes) % 100 == 0:
+                        self.logger.info(f"Collected {len(resumes)} resumes...")
+
+            await self._save_to_json(resumes, output_file, "resumes")
+
+            processing_time = (datetime.now() - start_time).total_seconds()
+
+            return ParserResult(
+                parser_name=self.parser_name,
+                total_vacancies=len(resumes),
                 unique_vacancies=len(self.seen_ids),
                 output_file=output_file,
                 processing_time=processing_time,
