@@ -336,7 +336,7 @@ async def get_me(
     filename = f"{user_id}.jpeg"
     image_path = os.path.join(settings.PROFILE_PICTURE_DIRECTORY, filename)
     if os.path.exists(image_path):
-        profile_pic_url = f"{settings.HOST}/api/v1/profile_pic/{user_id}"
+        profile_pic_url = f"{settings.PROTOCOL}://{settings.HOST}/api/v1/profile_pic/{user_id}"
 
     return User(
         first_name=db_user.first_name,
