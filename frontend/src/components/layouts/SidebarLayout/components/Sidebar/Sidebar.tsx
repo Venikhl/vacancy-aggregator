@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button.tsx';
-import { cn } from '@/lib/utils.ts';
+import { cn, replaceUrl } from '@/lib/utils.ts';
 import { File, Cog, Heart, Search } from 'lucide-react';
 import { useUserInfo } from '@/hooks/useUserInfo';
 
