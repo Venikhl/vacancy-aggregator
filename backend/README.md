@@ -4,7 +4,7 @@
 - `python 3.11`
 - `uv`
 
-## Local installation 
+## Local installation
 
 ```bash
 pip install uv
@@ -15,7 +15,7 @@ cd backend
 
 uv venv --python 3.11
 source .venv/bin/activate
-uv sync --frozen 
+uv sync --frozen
 ```
 
 note: `uv sync` ≈ `poetry install` + `poetry lock`
@@ -28,4 +28,4 @@ uv run uvicorn app.main:app
 ```
 ## API Documentation
 
-See OpenAPI file which is located at `backend/docs/openapi.json` or use `/docs` endpoint inside the app.
+See `/docs` endpoint inside the app.
