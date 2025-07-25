@@ -60,6 +60,8 @@ async def register(
         "first_name": register.first_name,
         "last_name": register.last_name,
         "email": register.email,
+        "birth_date": register.birth_date,
+        "gender": register.gender,
         "hashed_password": hashed_password,
     })
 
