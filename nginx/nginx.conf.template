@@ -6,7 +6,7 @@ http {
 
     server {
         listen 80;
-        server_name localhost;
+        server_name ${SERVER_NAME};
 
         location /api/ {
             proxy_pass http://backend:8000/api/;

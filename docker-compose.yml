@@ -45,14 +45,14 @@ services:
       - "8080:8080"
 
   nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    build: ./nginx
     depends_on:
       - frontend
       - backend
+    environment:
+      SERVER_NAME: ${HOST}
+    ports:
+      - "80:80"
 
 volumes:
   postgres_data:
