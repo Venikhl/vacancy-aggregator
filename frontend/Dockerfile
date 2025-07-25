@@ -13,4 +13,16 @@ RUN npm install
 
 COPY . .
 
+RUN rm -rf dist
 RUN npm run build
+
+FROM nginx:alpine
+
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+COPY nginx/nginx.conf.template /etc/nginx/nginx.conf.template
+COPY nginx/entrypoint.sh /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
