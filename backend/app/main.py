@@ -1,6 +1,7 @@
 """Entry point for vacancy-aggregator-backend application."""
 
 from sys import stdout
+from app.core.config import get_settings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -40,10 +41,17 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+settings = get_settings()
+
+origins = [
+    "http://localhost",
+    "http://127.0.0.1",
+    f"{settings.PROTOCOL}://{settings.HOST}"
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
