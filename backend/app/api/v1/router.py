@@ -202,6 +202,7 @@ async def update_me(
         hashed_password = hash_password(update_me.current_password)
         fields["hashed_password"] = hashed_password
     await user.update(session, db_obj=db_user, obj_in=fields)
+    await session.commit()
     return Response(status_code=200)
 
 
