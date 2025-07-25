@@ -5,9 +5,15 @@ import type { Filters } from '@/types/filters';
 if (!import.meta.env.VITE_API_HOST) {
     throw new Error('VITE_API_HOST is not defined in environment variables');
 }
+if (!import.meta.env.VITE_API_PROTOCOL) {
+    throw new Error(
+        'VITE_API_PROTOCOL is not defined in environment variables',
+    );
+}
 const API_HOST = import.meta.env.VITE_API_HOST;
+const API_PROTOCOL = import.meta.env.VITE_API_PROTOCOL;
 
-const API_BASE_URL = `${API_HOST}/api/v1`;
+const API_BASE_URL = `${API_PROTOCOL}://${API_HOST}/api/v1`;
 const REFRESH_TOKEN_URL = '/refresh_token';
 
 const axiosInstance = axios.create({
