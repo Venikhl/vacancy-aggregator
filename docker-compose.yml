@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   db:
     image: postgres:15
@@ -12,8 +10,8 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  web:
-    build: .
+  backend:
+    build: ./backend
     depends_on:
       - db
     environment:
@@ -36,6 +34,25 @@ services:
       "
     volumes:
       - ./static/pictures:/app/static/pictures
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    environment:
+      VITE_API_HOST: ${HOST}
+    ports:
+      - "8080:8080"
+
+  nginx:
+    build: ./nginx
+    depends_on:
+      - frontend
+      - backend
+    environment:
+      SERVER_NAME: ${HOST}
+    ports:
+      - "80:80"
 
 volumes:
   postgres_data:
