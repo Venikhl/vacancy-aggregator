@@ -60,6 +60,8 @@ async def register(
         "first_name": register.first_name,
         "last_name": register.last_name,
         "email": register.email,
+        "birth_date": register.birth_date,
+        "gender": register.gender,
         "hashed_password": hashed_password,
     })
 
@@ -200,6 +202,7 @@ async def update_me(
         hashed_password = hash_password(update_me.current_password)
         fields["hashed_password"] = hashed_password
     await user.update(session, db_obj=db_user, obj_in=fields)
+    await session.commit()
     return Response(status_code=200)
 
 
@@ -336,7 +339,8 @@ async def get_me(
     filename = f"{user_id}.jpeg"
     image_path = os.path.join(settings.PROFILE_PICTURE_DIRECTORY, filename)
     if os.path.exists(image_path):
-        profile_pic_url = f"{settings.HOST}/api/v1/profile_pic/{user_id}"
+        profile_pic_url = f"{settings.PROTOCOL}://{settings.HOST}" + \
+                          f"/api/v1/profile_pic/{user_id}"
 
     return User(
         first_name=db_user.first_name,

@@ -16,6 +16,7 @@ services:
       - db
     environment:
       HOST: ${HOST}
+      PROTOCOL: ${PROTOCOL}
       APP_NAME: ${APP_NAME}
       DATABASE_URL: postgresql+asyncpg://user:password@db:5432/vacancy_aggregator
       JWT_KEY: ${JWT_KEY}
@@ -36,18 +37,12 @@ services:
       - ./static/pictures:/app/static/pictures
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_HOST: ${HOST}
+        VITE_API_PROTOCOL: ${PROTOCOL}
     depends_on:
-      - backend
-    environment:
-      VITE_API_HOST: ${HOST}
-    ports:
-      - "8080:8080"
-
-  nginx:
-    build: ./nginx
-    depends_on:
-      - frontend
       - backend
     environment:
       SERVER_NAME: ${HOST}

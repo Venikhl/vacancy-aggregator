@@ -15,7 +15,6 @@ import { useState } from 'react';
 import { settingsAvatarSchema } from '@/schemas/settings.ts';
 import axiosInstance from '@/api';
 import { useUserInfo } from '@/hooks/useUserInfo.ts';
-import { replaceUrl } from '@/lib/utils.ts';
 
 type ImageUploadSchema = z.infer<typeof settingsAvatarSchema>;
 
@@ -65,6 +64,8 @@ const ImageUpload = () => {
         }
     };
 
+    console.log(user);
+
     return (
         <Form {...form}>
             <form
@@ -76,7 +77,11 @@ const ImageUpload = () => {
                 </h3>
 
                 <img
-                    src={previewUrl || replaceUrl(user) || '/user-avatar.png'}
+                    src={
+                        user && user.profile_pic_url
+                            ? user.profile_pic_url
+                            : '/user-avatar.png'
+                    }
                     alt="Аватар"
                     className="w-20 h-20 rounded-full"
                 />

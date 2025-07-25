@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     )
 
     HOST: str = "127.0.0.1"
+    PROTOCOL: str = "http"
     APP_NAME: str = "VacancyAggregatorAPI"
     DATABASE_URL: str
     JWT_KEY: str

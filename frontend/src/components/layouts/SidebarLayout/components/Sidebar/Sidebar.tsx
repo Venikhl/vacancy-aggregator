@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button.tsx';
-import { cn, replaceUrl } from '@/lib/utils.ts';
+import { cn } from '@/lib/utils.ts';
 import { File, Cog, Heart, Search } from 'lucide-react';
 import { useUserInfo } from '@/hooks/useUserInfo';
 
@@ -29,7 +29,11 @@ const Sidebar: React.FC = () => {
         >
             <div className="flex flex-col items-center mb-8 px-4">
                 <img
-                    src={replaceUrl(value) || '/planet.png'}
+                    src={
+                        value && value.profile_pic_url
+                            ? value.profile_pic_url
+                            : '/planet.png'
+                    }
                     alt="avatar"
                     className="w-20 h-20 rounded-full object-cover mb-4"
                 />
