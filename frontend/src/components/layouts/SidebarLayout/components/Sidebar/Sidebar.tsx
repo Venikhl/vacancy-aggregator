@@ -29,7 +29,11 @@ const Sidebar: React.FC = () => {
         >
             <div className="flex flex-col items-center mb-8 px-4">
                 <img
-                    src={value ? value.profile_pic_url : '/planet.png'}
+                    src={
+                        value && value.profile_pic_url
+                            ? value.profile_pic_url
+                            : '/planet.png'
+                    }
                     alt="avatar"
                     className="w-20 h-20 rounded-full object-cover mb-4"
                 />
