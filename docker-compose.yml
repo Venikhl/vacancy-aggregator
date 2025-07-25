@@ -42,10 +42,9 @@ services:
       args:
         VITE_API_HOST: ${HOST}
         VITE_API_PROTOCOL: ${PROTOCOL}
-    depends_on:
-      - backend
-    ports:
-      - "8080:8080"
+    entrypoint: ["true"]
+    volumes:
+      - frontend_build:/app/dist
 
   nginx:
     build: ./nginx
@@ -56,6 +55,9 @@ services:
       SERVER_NAME: ${HOST}
     ports:
       - "80:80"
+    volumes:
+      - frontend_build:/usr/share/nginx/html
 
 volumes:
   postgres_data:
+  frontend_build:
