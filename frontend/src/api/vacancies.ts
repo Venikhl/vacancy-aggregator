@@ -1,12 +1,12 @@
-import axios from 'axios';
 import type { Filters } from '@/types/filters';
+import axiosInstance from '.';
 
 export const getVacancies = async (
     offset: number,
     count: number,
     filters: Filters,
 ) => {
-    return axios.post('/api/v1/vacancies', {
+    return axiosInstance.post('/vacancies', {
         filter: filters,
         view: {
             offset,
@@ -16,5 +16,5 @@ export const getVacancies = async (
 };
 
 export const getVacancyById = async (id: number | string) => {
-    return axios.get(`/api/v1/vacancy/${id}`);
+    return axiosInstance.get(`/vacancy/${id}`);
 };
