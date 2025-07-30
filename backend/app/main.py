@@ -4,14 +4,9 @@ from sys import stdout
 from app.core.config import get_settings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.interval import IntervalTrigger
 from contextlib import asynccontextmanager
 from .api.v1.router import router as v1_router
-from .tasks.parsing import parse_services
 import logging
-
-scheduler = AsyncIOScheduler()
 
 
 @asynccontextmanager
@@ -27,17 +22,8 @@ async def lifespan(app: FastAPI):
         stream=stdout,
         level=logging.INFO
     )
-    scheduler.add_job(
-        parse_services,
-        IntervalTrigger(days=1),
-        id="parsing"
-    )
-
-    scheduler.start()
 
     yield
-
-    scheduler.shutdown()
 
 
 app = FastAPI(lifespan=lifespan)
