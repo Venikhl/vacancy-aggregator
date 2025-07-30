@@ -1,6 +1,5 @@
 import axios from 'axios';
 import TokenService from './tokens';
-import type { Filters } from '@/types/filters';
 
 if (!import.meta.env.VITE_API_HOST) {
     throw new Error('VITE_API_HOST is not defined in environment variables');
@@ -75,18 +74,3 @@ axiosInstance.interceptors.response.use(
 );
 
 export default axiosInstance;
-
-export const getVacancies = async (
-    offset: number,
-    count: number,
-    filters: Filters,
-) => {
-    return axiosInstance.post('/vacancies', {
-        filter: filters,
-        view: { offset, count },
-    });
-};
-
-export const getVacancyById = async (id: number | string) => {
-    return axiosInstance.get(`/vacancy/${id}`);
-};
