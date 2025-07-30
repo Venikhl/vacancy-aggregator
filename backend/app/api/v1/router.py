@@ -601,7 +601,7 @@ async def vacancies(
             filter.location.region
         )
         if db_location:
-            location_id = db_location.location_id
+            location_id = db_location.id
 
     offset = vacancies_view.view.offset
     count = vacancies_view.view.count
