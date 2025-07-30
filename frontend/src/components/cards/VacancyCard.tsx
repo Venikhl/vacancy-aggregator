@@ -28,7 +28,9 @@ function formatDate(dateString: string): string {
 type VacancyDetails = {
     id: number | string;
     title: string;
-    company?: string;
+    company?: {
+        name: string;
+    };
     location?: {
         region?: string;
     };
@@ -66,6 +68,7 @@ export const VacancyCard: React.FC<VacancyCardProps> = ({
         setLoading(true);
         try {
             const res = await getVacancyById(id);
+            console.log(res);
             setDetails(res.data as VacancyDetails);
         } catch (e: unknown) {
             if (e instanceof Error) {
@@ -123,7 +126,7 @@ export const VacancyCard: React.FC<VacancyCardProps> = ({
                         </DialogTitle>
                         {details?.company && (
                             <DialogDescription className="text-sm text-[var(--color-muted-foreground)]">
-                                {details.company}
+                                {details.company.name}
                             </DialogDescription>
                         )}
                     </DialogHeader>
