@@ -1,8 +1,8 @@
 """init
 
-Revision ID: 1a87a1170348
+Revision ID: 3358df6bb8b9
 Revises: 
-Create Date: 2025-06-19 00:59:45.473272
+Create Date: 2025-07-30 23:22:15.779657
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '1a87a1170348'
+revision: str = '3358df6bb8b9'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -48,7 +48,7 @@ def upgrade() -> None:
     )
     op.create_table('Source',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('name', sa.String(length=50), nullable=False),
+    sa.Column('name', sa.String(length=255), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('Specialization',
@@ -61,6 +61,8 @@ def upgrade() -> None:
     sa.Column('first_name', sa.String(length=100), nullable=True),
     sa.Column('last_name', sa.String(length=100), nullable=True),
     sa.Column('email', sa.String(length=200), nullable=True),
+    sa.Column('birth_date', sa.Date(), nullable=True),
+    sa.Column('gender', sa.Enum('male', 'female', 'other', name='user_gender'), nullable=True),
     sa.Column('hashed_password', sa.String(length=100), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
