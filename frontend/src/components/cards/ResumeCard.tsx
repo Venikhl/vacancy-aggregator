@@ -55,7 +55,7 @@ function formatDate(dateString: string): string {
 
 export const ResumeCard: React.FC<ResumeCardProps> = ({
     id,
-    title,
+    // title,
     description,
     salary,
     fullName,
@@ -125,7 +125,8 @@ export const ResumeCard: React.FC<ResumeCardProps> = ({
                 >
                     <DialogHeader>
                         <DialogTitle className="text-xl">
-                            {details?.title || title}
+                            {/* {details?.title || title} */}
+                            Подробнее:
                         </DialogTitle>
                         {details?.location?.region && (
                             <DialogDescription className="text-sm text-[var(--color-muted-foreground)]">
