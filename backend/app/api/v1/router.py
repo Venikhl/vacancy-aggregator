@@ -693,6 +693,8 @@ async def resumes(
         )
         if db_location:
             location_id = db_location.location_id
+    offset = resumes_view.view.offset
+    count = resumes_view.view.count
     db_resumes = await dbresume.search(
         session,
         title=filter.title,
@@ -700,7 +702,9 @@ async def resumes(
         min_salary=filter.salary_min,
         max_salary=filter.salary_max,
         experience_category_ids=experience_category_ids,
-        skills=filter.skills
+        skills=filter.skills,
+        skip=offset,
+        limit=count
     )
     resumes = []
     resume_count = 0
