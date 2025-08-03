@@ -692,7 +692,7 @@ async def resumes(
             filter.location.region
         )
         if db_location:
-            location_id = db_location.location_id
+            location_id = db_location.id
     offset = resumes_view.view.offset
     count = resumes_view.view.count
     db_resumes = await dbresume.search(
