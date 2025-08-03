@@ -31,7 +31,7 @@ type Props = {
 export const VacancyFilters: React.FC<Props> = ({
     filters,
     onChange,
-    onApply,
+    // onApply,
     onReset,
 }) => {
     const form = useForm<Filters>({
@@ -73,7 +73,7 @@ export const VacancyFilters: React.FC<Props> = ({
             date_published_to: null,
         };
         onChange(cleaned);
-        onApply();
+        // onApply();
     };
 
     const handleSearch = () => {
@@ -85,7 +85,7 @@ export const VacancyFilters: React.FC<Props> = ({
             date_published_to: null,
         };
         onChange(cleaned);
-        onApply();
+        // onApply();
     };
 
     return (

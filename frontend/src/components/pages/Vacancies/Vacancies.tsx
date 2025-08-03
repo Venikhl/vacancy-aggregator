@@ -40,7 +40,7 @@ export const Vacancies: React.FC = () => {
 
     const handleApplyFilters = () => {
         setCurrentPage(1);
-        fetchVacancies(filters, 0, VACANCIES_PER_PAGE);
+        // fetchVacancies(filters, 0, VACANCIES_PER_PAGE);
     };
 
     return (
