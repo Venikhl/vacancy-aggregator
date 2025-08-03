@@ -1,116 +1,366 @@
 import React from 'react';
+import { useForm } from 'react-hook-form';
 import { Search } from 'lucide-react';
 
-export const ResumeFilters: React.FC = () => {
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import {
+    Form,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormControl,
+} from '@/components/ui/form';
+import {
+    Select,
+    SelectTrigger,
+    SelectContent,
+    SelectItem,
+    SelectValue,
+} from '@/components/ui/select';
+
+import type { ResumeFilters as ResumeFiltersType } from '@/types/filters';
+
+type Props = {
+    filters: ResumeFiltersType;
+    onChange: (filters: ResumeFiltersType) => void;
+    onApply: () => void;
+    onReset: () => void;
+};
+
+export const ResumeFilters: React.FC<Props> = ({
+    filters,
+    onChange,
+    // onApply,
+    onReset,
+}) => {
+    const form = useForm<ResumeFiltersType>({
+        defaultValues: filters,
+    });
+
+    const { control, getValues, reset } = form;
+
+    React.useEffect(() => {
+        reset(filters);
+    }, [filters, reset]);
+
+    const handleApply = () => {
+        const value = getValues();
+        const cleaned: ResumeFiltersType = {
+            title: value.title?.trim() || null,
+            location:
+                typeof value.location === 'string'
+                    ? { region: value.location }
+                    : value.location?.region
+                      ? { region: value.location.region }
+                      : null,
+            salary_min: value.salary_min ?? null,
+            salary_max: value.salary_max ?? null,
+            experience_categories: (value.experience_categories ?? [])
+                .filter(
+                    (
+                        v,
+                    ): v is {
+                        name: string;
+                        years_of_experience: number | null;
+                    } => !!v?.name,
+                )
+                .map((v) => ({ name: v.name, years_of_experience: null })),
+            skills: (value.skills ?? []).filter((s) => !!s.trim()),
+        };
+        // console.log('[Фильтр] Отправка фильтра:', cleaned);
+        // console.log(JSON.stringify(cleaned.location));
+        // console.log(JSON.stringify(cleaned));
+
+        onChange(cleaned);
+        // onApply();
+    };
+
+    const handleSearch = () => {
+        const value = getValues();
+        onChange({
+            ...filters,
+            title: value.title?.trim() || null,
+        });
+        // onApply();
+    };
+
     return (
-        <div className="bg-white text-black rounded-2xl p-6 shadow-md space-y-6">
-            {/* поиск */}
-            <div className="flex flex-wrap items-center gap-4">
-                <input
-                    type="text"
-                    placeholder="Должность, навыки, имя"
-                    className="flex-grow rounded-md border border-gray-300 bg-white px-4 py-2 text-sm placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-orange-500"
-                />
-                <button className="flex items-center gap-1 rounded-md bg-black hover:bg-gray-800 px-4 py-2 text-sm text-white">
-                    <Search size={16} />
-                    Поиск
-                </button>
-            </div>
+        <Form {...form}>
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    handleApply();
+                }}
+                className="bg-white text-black rounded-2xl p-6 shadow-md space-y-6"
+            >
+                {/* Поиск */}
+                <div className="flex flex-wrap items-center gap-4">
+                    <FormField
+                        control={control}
+                        name="title"
+                        render={({ field }) => (
+                            <FormItem className="flex-grow">
+                                <FormControl>
+                                    <Input
+                                        {...field}
+                                        placeholder="Должность, имя, навык"
+                                        startIcon={Search}
+                                        value={field.value ?? ''}
+                                    />
+                                </FormControl>
+                            </FormItem>
+                        )}
+                    />
+                    <Button type="button" onClick={handleSearch}>
+                        <Search size={16} />
+                        Поиск
+                    </Button>
+                </div>
 
-            {/* фильтры */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {/* Ключевые слова */}
-                <div className="flex flex-col">
-                    <label className="text-sm mb-1">Ключевые слова</label>
-                    <input
-                        type="text"
-                        placeholder="Должность, навыки, имя"
-                        className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-500 outline-none"
+                {/* Сетка фильтров */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+                    {/* Регион */}
+                    <FormField
+                        control={control}
+                        name="location"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Регион</FormLabel>
+                                <FormControl>
+                                    <Select
+                                        value={field.value?.region ?? 'unset'}
+                                        onValueChange={(value) =>
+                                            field.onChange(
+                                                value === 'unset'
+                                                    ? null
+                                                    : { region: value },
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Выберите регион" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="unset">
+                                                Не выбрано
+                                            </SelectItem>
+                                            {[
+                                                'Москва',
+                                                'Санкт-Петербург',
+                                                'Екатеринбург',
+                                                'Новосибирск',
+                                                'Казань',
+                                                'Нижний Новгород',
+                                                'Челябинск',
+                                                'Самара',
+                                                'Омск',
+                                                'Ростов-на-Дону',
+                                                'Уфа',
+                                                'Красноярск',
+                                                'Воронеж',
+                                                'Пермь',
+                                                'Волгоград',
+                                                'Саратов',
+                                                'Тюмень',
+                                                'Тольятти',
+                                                'Ижевск',
+                                                'Барнаул',
+                                                'Иркутск',
+                                                'Кемерово',
+                                                'Хабаровск',
+                                                'Ярославль',
+                                                'Махачкала',
+                                                'Томск',
+                                                'Оренбург',
+                                                'Курск',
+                                                'Ульяновск',
+                                                'Владивосток',
+                                                'Чебоксары',
+                                                'Севастополь',
+                                                'Тула',
+                                                'Калининград',
+                                                'Липецк',
+                                                'Киров',
+                                                'Ставрополь',
+                                                'Брянск',
+                                                'Белгород',
+                                                'Архангельск',
+                                                'Рязань',
+                                                'Пенза',
+                                                'Набережные Челны',
+                                                'Астрахань',
+                                                'Сочи',
+                                                'Якутск',
+                                                'Нижневартовск',
+                                                'Сургут',
+                                                'Грозный',
+                                            ].map((region) => (
+                                                <SelectItem
+                                                    key={region}
+                                                    value={region}
+                                                >
+                                                    {region}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </FormControl>
+                            </FormItem>
+                        )}
+                    />
+
+                    {/* Зарплата */}
+                    <FormItem>
+                        <FormLabel>Желаемая зарплата</FormLabel>
+                        <div className="flex gap-2">
+                            <FormField
+                                control={control}
+                                name="salary_min"
+                                render={({ field }) => (
+                                    <FormItem className="w-full">
+                                        <FormControl>
+                                            <Input
+                                                type="text"
+                                                inputMode="numeric"
+                                                placeholder="От"
+                                                value={field.value ?? ''}
+                                                onChange={(e) => {
+                                                    const raw = e.target.value;
+                                                    const num = parseInt(raw);
+                                                    field.onChange(
+                                                        raw === ''
+                                                            ? null
+                                                            : isNaN(num)
+                                                              ? null
+                                                              : num,
+                                                    );
+                                                }}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={control}
+                                name="salary_max"
+                                render={({ field }) => (
+                                    <FormItem className="w-full">
+                                        <FormControl>
+                                            <Input
+                                                type="text"
+                                                inputMode="numeric"
+                                                placeholder="До"
+                                                value={field.value ?? ''}
+                                                onChange={(e) => {
+                                                    const raw = e.target.value;
+                                                    const num = parseInt(raw);
+                                                    field.onChange(
+                                                        raw === ''
+                                                            ? null
+                                                            : isNaN(num)
+                                                              ? null
+                                                              : num,
+                                                    );
+                                                }}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                    </FormItem>
+
+                    {/* Опыт */}
+                    <FormField
+                        control={control}
+                        name="experience_categories"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Опыт работы</FormLabel>
+                                <div className="space-y-1 text-sm">
+                                    {[
+                                        'Без опыта',
+                                        '1–3 года',
+                                        '3–6 лет',
+                                        'Более 6 лет',
+                                    ].map((label) => (
+                                        <label
+                                            key={label}
+                                            className="flex items-center gap-2"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={(
+                                                    field.value ?? []
+                                                ).some((v) => v.name === label)}
+                                                onChange={() => {
+                                                    const current =
+                                                        field.value ?? [];
+                                                    const exists = current.some(
+                                                        (v) => v.name === label,
+                                                    );
+                                                    const updated = exists
+                                                        ? current.filter(
+                                                              (v) =>
+                                                                  v.name !==
+                                                                  label,
+                                                          )
+                                                        : [
+                                                              ...current,
+                                                              {
+                                                                  name: label,
+                                                                  years_of_experience:
+                                                                      null,
+                                                              },
+                                                          ];
+                                                    field.onChange(updated);
+                                                }}
+                                            />
+                                            {label}
+                                        </label>
+                                    ))}
+                                </div>
+                            </FormItem>
+                        )}
+                    />
+
+                    {/* Навыки */}
+                    <FormField
+                        control={control}
+                        name="skills"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Ключевые навыки</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        placeholder="JavaScript, Python"
+                                        value={(field.value ?? []).join(', ')}
+                                        onChange={(e) =>
+                                            field.onChange(
+                                                e.target.value
+                                                    .split(',')
+                                                    .map((s) => s.trim())
+                                                    .filter((s) => s !== ''),
+                                            )
+                                        }
+                                    />
+                                </FormControl>
+                            </FormItem>
+                        )}
                     />
                 </div>
 
-                {/* Регион */}
-                <div className="flex flex-col">
-                    <label className="text-sm mb-1">Регион</label>
-                    <select className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm">
-                        <option>Все регионы</option>
-                        <option>Москва</option>
-                        <option>Санкт-Петербург</option>
-                    </select>
+                {/* Кнопки */}
+                <div className="flex justify-end gap-4 mt-4">
+                    <Button type="button" variant="outline" onClick={onReset}>
+                        Сбросить
+                    </Button>
+                    <Button type="submit" variant="default">
+                        Применить фильтры
+                    </Button>
                 </div>
-
-                {/* Зарплата */}
-                <div className="flex flex-col">
-                    <label className="text-sm mb-1">Желаемая зарплата</label>
-                    <input
-                        type="range"
-                        min={30000}
-                        max={150000}
-                        className="w-full"
-                    />
-                    <div className="flex justify-between text-xs mt-1 text-gray-500">
-                        <span>30 000 ₽</span>
-                        <span>150 000 ₽</span>
-                    </div>
-                </div>
-
-                {/* Опыт */}
-                <div className="flex flex-col">
-                    <label className="text-sm mb-1">Опыт работы</label>
-                    <div className="space-y-1 text-sm">
-                        <label className="flex items-center">
-                            <input type="checkbox" className="mr-2" /> Без опыта
-                        </label>
-                        <label className="flex items-center">
-                            <input type="checkbox" className="mr-2" /> 1–3 года
-                        </label>
-                        <label className="flex items-center">
-                            <input type="checkbox" className="mr-2" /> 3–6 лет
-                        </label>
-                        <label className="flex items-center">
-                            <input type="checkbox" className="mr-2" /> Более 6
-                            лет
-                        </label>
-                    </div>
-                </div>
-
-                {/* Навыки */}
-                <div className="flex flex-col">
-                    <label className="text-sm mb-1">Ключевые навыки</label>
-                    <input
-                        type="text"
-                        placeholder="JavaScript, React, Python"
-                        className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-500 outline-none"
-                    />
-                </div>
-
-                {/* Образование */}
-                <div className="flex flex-col">
-                    <label className="text-sm mb-1">Образование</label>
-                    <div className="space-y-1 text-sm">
-                        <label className="flex items-center">
-                            <input type="checkbox" className="mr-2" /> Высшее
-                        </label>
-                        <label className="flex items-center">
-                            <input type="checkbox" className="mr-2" /> Среднее
-                            специальное
-                        </label>
-                        <label className="flex items-center">
-                            <input type="checkbox" className="mr-2" /> Курсы
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            {/* Кнопки */}
-            <div className="flex justify-end gap-4 mt-4">
-                <button className="px-4 py-2 text-sm bg-[#1e1e1e] text-white rounded-md hover:bg-gray-800">
-                    Сбросить
-                </button>
-                <button className="px-4 py-2 text-sm bg-[#1e1e1e] text-white rounded-md hover:bg-gray-800">
-                    Применить фильтры
-                </button>
-            </div>
-        </div>
+            </form>
+        </Form>
     );
 };
